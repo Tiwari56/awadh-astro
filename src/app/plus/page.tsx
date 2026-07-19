@@ -4,7 +4,7 @@ export default function PlusPage() {
   return (
     <div className="container section">
       <h2>Awadh Plus</h2>
-      <p style={{ marginBottom: 28, color: "#4b5563", maxWidth: 640 }}>
+      <p style={{ marginBottom: 28, color: "var(--ink-soft)", maxWidth: 640 }}>
         Your kundali, working for you every day. Plus members receive proactive notifications —
         auspicious muhurat for purchases and new ventures, caution days to avoid, and monthly
         personalized reports.
@@ -31,7 +31,7 @@ export default function PlusPage() {
         ))}
       </div>
 
-      <p style={{ marginTop: 24, fontSize: "0.8rem", color: "#6b7280" }}>
+      <p style={{ marginTop: 24, fontSize: "0.8rem", color: "var(--muted)" }}>
         Payments will be processed via Razorpay (UPI, cards, net banking). Cancel anytime.
       </p>
     </div>

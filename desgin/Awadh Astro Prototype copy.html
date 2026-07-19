@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awadh Astro — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Mukta:wght@300;400;500;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8eddb;--surface:#fffdf8;--surface-2:#fbf3e3;--ink:#33200f;--ink-soft:#7a6450;--muted:#a08d76;
+  --primary:#d9871a;--primary-deep:#a23c12;--accent:#b3211f;
+  --gold:#c19a45;--line:#ead7b5;--ok:#3f8f4e;--font-d:'Marcellus',Georgia,serif;--font-b:'Mukta',system-ui,sans-serif;--font-h:'Tiro Devanagari Hindi',serif;
+  --r:16px;--r-lg:22px;--r-sm:11px;--sh:0 2px 10px rgba(90,45,10,.07);--sh-md:0 10px 30px rgba(90,45,10,.13);--sh-lg:0 20px 50px rgba(60,30,8,.2);
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+[data-theme="gold"]{
+  --bg:#20120e;--surface:#2c1a14;--surface-2:#341f18;--ink:#f4e6cb;--ink-soft:#cbb188;--muted:#9a815f;
+  --primary:#e0a63a;--primary-deep:#e8b756;--accent:#e07a5f;--gold:#d9b25a;--line:#472c22;--ok:#7fbf7a;
+  --sh:0 2px 10px rgba(0,0,0,.3);--sh-md:0 10px 30px rgba(0,0,0,.45);--sh-lg:0 20px 50px rgba(0,0,0,.55);
+}
+[data-theme="sindoor"]{
+  --bg:#f4f1ec;--surface:#ffffff;--surface-2:#f7f2ec;--ink:#241f1a;--ink-soft:#6a6157;--muted:#9a9187;
+  --primary:#c0392b;--primary-deep:#9c2a1f;--accent:#c0392b;--gold:#a8875a;--line:#e9e2d8;--ok:#3f8f4e;
+  --r:14px;--r-lg:18px;--sh:0 1px 4px rgba(30,20,10,.06);--sh-md:0 8px 24px rgba(30,20,10,.1);--sh-lg:0 18px 44px rgba(30,20,10,.14);
+}
+body{font-family:var(--font-b);background:#e6ddd0;color:#33200f;min-height:100vh;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:26px 16px 60px}
+[lang="hi"],.hi{font-family:var(--font-h)}
+/* ---- toolbar ---- */
+.toolbar{width:100%;max-width:440px;text-align:center;margin-bottom:20px}
+.toolbar .brand{font-family:var(--font-d);font-size:1.35rem;color:#5a2f10;letter-spacing:.01em}
+.toolbar .brand b{color:#b3211f;font-weight:400}
+.toolbar .sub{font-size:.8rem;color:#8a6f55;margin-top:3px}
+.themes{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.themes button{font-family:var(--font-b);font-size:.78rem;font-weight:600;padding:8px 15px;border-radius:999px;border:1.5px solid #d8c3a1;background:#fffdf8;color:#6a4a28;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.2s var(--ease)}
+.themes button .sw{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.12)}
+.themes button[aria-selected="true"]{border-color:#a23c12;background:#5a2f10;color:#fff;box-shadow:var(--sh-md)}
+/* ---- phone ---- */
+.device{width:390px;height:812px;border-radius:52px;background:#1c120b;padding:13px;box-shadow:var(--sh-lg),0 0 0 2px rgba(0,0,0,.25);position:relative}
+.screen-wrap{width:100%;height:100%;border-radius:40px;overflow:hidden;background:var(--bg);position:relative;transition:background .4s var(--ease)}
+.notch{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#1c120b;border-radius:0 0 18px 18px;z-index:200}
+/* status bar */
+.statusbar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font-size:.78rem;font-weight:600;color:var(--ink);position:relative;z-index:60}
+.statusbar .dots{display:flex;gap:5px;align-items:center}
+/* app */
+.app{position:absolute;inset:0;top:0;display:flex;flex-direction:column;background:var(--bg);transition:background .4s var(--ease)}
+.viewport{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.viewport::-webkit-scrollbar{display:none}
+.screen{display:none;padding-bottom:26px;animation:fade .4s var(--ease)}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,143,78,.5)}70%{box-shadow:0 0 0 8px rgba(63,143,78,0)}100%{box-shadow:0 0 0 0 rgba(63,143,78,0)}}
+/* app header */
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 14px}
+.appbar .lockup{display:flex;align-items:center;gap:9px}
+.appbar .om{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(150deg,var(--primary),var(--primary-deep));color:#fff;font-size:1.1rem;box-shadow:var(--sh)}
+.appbar .nm{font-family:var(--font-d);font-size:1.12rem;color:var(--ink);line-height:1}
+.appbar .loc{font-size:.68rem;color:var(--ink-soft);display:flex;align-items:center;gap:3px;margin-top:2px}
+.appbar .actions{display:flex;gap:9px;align-items:center}
+.iconbtn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink);cursor:pointer;transition:.2s var(--ease)}
+.iconbtn:active{transform:scale(.94)}
+.wallet{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 11px;font-size:.8rem;font-weight:700;color:var(--ink);cursor:pointer}
+.wallet .rupee{color:var(--primary)}
+svg{display:block}
+.ic{width:20px;height:20px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* section shell */
+.pad{padding:0 18px}
+.divider{display:flex;align-items:center;gap:11px;margin:22px 18px 15px}
+.divider::before,.divider::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+.divider .di{width:8px;height:8px;background:var(--gold);transform:rotate(45deg);flex-shrink:0}
+.sec-title{font-family:var(--font-d);font-size:1.18rem;color:var(--ink)}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 18px;margin-bottom:12px}
+.sec-head .all{font-size:.78rem;color:var(--primary);font-weight:600;cursor:pointer}
+.eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary-deep)}
+/* hero */
+.hero{position:relative;margin:2px 14px 0;padding:26px 22px 24px;border-radius:var(--r-lg);overflow:hidden;background:
+  radial-gradient(120% 90% at 80% -10%,color-mix(in oklab,var(--primary) 26%,transparent),transparent 60%),
+  linear-gradient(160deg,var(--surface),var(--surface-2));border:1px solid var(--line);box-shadow:var(--sh)}
+.mandala{position:absolute;width:240px;height:240px;right:-70px;top:-60px;opacity:.5;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg,var(--gold) 0deg 4deg,transparent 4deg 12deg);
+  -webkit-mask:radial-gradient(circle,#000 12%,rgba(0,0,0,.35) 34%,transparent 62%);mask:radial-gradient(circle,#000 12%,rgba(0,0,0,.35) 34%,transparent 62%)}
+.hero .eyebrow{position:relative}
+.hero h1{position:relative;font-family:var(--font-d);font-size:1.72rem;line-height:1.14;color:var(--ink);margin:9px 0 6px;letter-spacing:.005em}
+.hero .hi-tag{position:relative;font-family:var(--font-h);font-size:1rem;color:var(--primary-deep);margin-bottom:4px}
+.hero p{position:relative;font-size:.86rem;color:var(--ink-soft);line-height:1.55;max-width:290px}
+.hero .cta{position:relative;display:inline-flex;margin-top:16px}
+.btn{font-family:var(--font-b);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:.92rem;padding:13px 22px;border-radius:999px;border:none;cursor:pointer;transition:.2s var(--ease);line-height:1}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(140deg,var(--primary),var(--primary-deep));color:#fff;box-shadow:var(--sh-md)}
+.btn-ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn-block{width:100%}
+.btn-lg{padding:15px 24px;font-size:1rem}
+/* live astrologer strip */
+.hstrip{display:flex;gap:12px;overflow-x:auto;padding:0 18px 6px;scrollbar-width:none}
+.hstrip::-webkit-scrollbar{display:none}
+.astro-mini{flex-shrink:0;width:96px;text-align:center}
+.astro-mini .av{width:66px;height:66px;border-radius:50%;margin:0 auto 7px;position:relative;background:linear-gradient(140deg,var(--primary),var(--primary-deep));display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-size:1.3rem;box-shadow:var(--sh);border:2.5px solid var(--surface)}
+.astro-mini .av.online::after{content:"";position:absolute;right:3px;bottom:3px;width:14px;height:14px;border-radius:50%;background:var(--ok);border:2.5px solid var(--surface);animation:pulse 2.2s infinite}
+.astro-mini .nm{font-size:.76rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.astro-mini .rt{font-size:.68rem;color:var(--ink-soft)}
+/* service grid */
+.services{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;padding:0 18px}
+.svc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 8px 12px;text-align:center;cursor:pointer;transition:.22s var(--ease)}
+.svc:active{transform:scale(.96)}
+.svc .si{width:44px;height:44px;border-radius:13px;margin:0 auto 8px;display:grid;place-items:center;background:color-mix(in oklab,var(--primary) 14%,var(--surface));color:var(--primary-deep)}
+.svc .lbl{font-size:.78rem;font-weight:600;color:var(--ink);line-height:1.2}
+.svc .hi{font-size:.66rem;color:var(--ink-soft);margin-top:1px}
+/* featured puja card */
+.puja-feat{margin:0 14px;border-radius:var(--r-lg);overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh-md)}
+.puja-feat .img{height:132px;position:relative;background:
+  repeating-linear-gradient(115deg,color-mix(in oklab,var(--primary) 22%,var(--surface)) 0 11px,color-mix(in oklab,var(--primary) 13%,var(--surface)) 11px 22px);display:grid;place-items:center}
+.imgtag{font-family:ui-monospace,monospace;font-size:.66rem;color:var(--primary-deep);background:color-mix(in oklab,var(--surface) 78%,transparent);padding:5px 10px;border-radius:7px;letter-spacing:.03em}
+.badge-float{position:absolute;top:11px;left:11px;background:var(--accent);color:#fff;font-size:.66rem;font-weight:700;padding:5px 11px;border-radius:999px;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
+.puja-feat .bd{padding:15px 16px 16px}
+.puja-feat h3{font-family:var(--font-d);font-size:1.16rem;color:var(--ink)}
+.puja-feat .meta{font-size:.78rem;color:var(--ink-soft);margin:4px 0 12px}
+.puja-feat .row{display:flex;align-items:center;justify-content:space-between}
+.price{font-family:var(--font-d);font-size:1.3rem;color:var(--ink)}
+.price small{font-family:var(--font-b);font-size:.72rem;color:var(--ink-soft);font-weight:500}
+/* trust strip */
+.trust{display:flex;gap:9px;padding:0 18px}
+.trust .t{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 9px;text-align:center}
+.trust .t .ti{color:var(--primary-deep);margin:0 auto 6px}
+.trust .t .tt{font-size:.7rem;font-weight:600;color:var(--ink);line-height:1.25}
+/* generic card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:0 18px 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:8px 15px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-size:.8rem;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:.2s var(--ease)}
+.chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+/* forms */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.8rem;font-weight:600;color:var(--ink);margin-bottom:6px}
+.field input,.field select{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:var(--r-sm);font-family:var(--font-b);font-size:.95rem;background:var(--surface);color:var(--ink)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklab,var(--primary) 22%,transparent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+/* kundali result */
+.k-hero{margin:2px 14px 0;padding:20px;border-radius:var(--r-lg);background:linear-gradient(160deg,var(--surface),var(--surface-2));border:1px solid var(--line);text-align:center;position:relative;overflow:hidden}
+.k-hero .mandala{width:180px;height:180px;left:50%;top:-40px;transform:translateX(-50%);right:auto;opacity:.35}
+.chakra{width:110px;height:110px;margin:6px auto 12px;position:relative;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;background:conic-gradient(from -90deg,color-mix(in oklab,var(--primary) 30%,transparent),transparent 78%);box-shadow:var(--sh)}
+.chakra .in{width:82px;height:82px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center}
+.chakra .in .big{font-family:var(--font-d);font-size:1.35rem;color:var(--ink);line-height:1}
+.chakra .in .sm{font-size:.62rem;color:var(--ink-soft);margin-top:2px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 18px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 13px}
+.stat .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-deep);font-weight:700}
+.stat .v{font-family:var(--font-d);font-size:1.05rem;color:var(--ink);margin-top:3px}
+.stat .v .hi{font-size:.85rem;color:var(--ink-soft)}
+.planet-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.planet-row:last-child{border:none}
+.planet-row .pg{width:34px;height:34px;border-radius:9px;background:color-mix(in oklab,var(--primary) 13%,var(--surface));display:grid;place-items:center;font-family:var(--font-d);color:var(--primary-deep);font-size:.95rem;flex-shrink:0}
+.planet-row .pn{flex:1;font-size:.86rem;font-weight:600;color:var(--ink)}
+.planet-row .ps{font-size:.8rem;color:var(--ink-soft)}
+.insight{margin:16px 18px 0;padding:14px 16px;border-left:3px solid var(--primary);background:var(--surface-2);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:.84rem;color:var(--ink-soft);line-height:1.55}
+.insight b{color:var(--ink);font-weight:700}
+/* matching */
+.match-pair{display:flex;align-items:stretch;gap:0;margin:2px 14px 0}
+.mp{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 12px;text-align:center}
+.mp .av{width:52px;height:52px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;font-family:var(--font-d);color:#fff;font-size:1.15rem;background:linear-gradient(140deg,var(--primary),var(--primary-deep))}
+.mp .rl{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-deep);font-weight:700}
+.mp .nm{font-family:var(--font-d);font-size:1rem;color:var(--ink);margin-top:2px}
+.mp .dt{font-size:.72rem;color:var(--ink-soft);margin-top:2px}
+.match-vs{width:40px;display:grid;place-items:center;font-family:var(--font-d);color:var(--gold);font-size:.9rem}
+.gauge{margin:20px auto 0;width:172px;height:172px;border-radius:50%;display:grid;place-items:center;position:relative}
+.gauge .ring{position:absolute;inset:0;border-radius:50%}
+.gauge .in{width:128px;height:128px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center;box-shadow:var(--sh)}
+.gauge .in .pct{font-family:var(--font-d);font-size:2.5rem;color:var(--ink);line-height:1}
+.gauge .in .of{font-size:.74rem;color:var(--ink-soft)}
+.gauge .in .vr{font-size:.7rem;font-weight:700;color:var(--ok);margin-top:3px;letter-spacing:.04em}
+.koot{padding:4px 18px 0}
+.koot-row{display:flex;align-items:center;gap:11px;padding:9px 0}
+.koot-row .kn{width:74px;font-size:.8rem;font-weight:600;color:var(--ink)}
+.koot-row .kn small{display:block;font-weight:400;color:var(--ink-soft);font-size:.66rem}
+.koot-row .bar{flex:1;height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.koot-row .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--primary),var(--primary-deep))}
+.koot-row .kp{width:34px;text-align:right;font-size:.78rem;font-weight:700;color:var(--ink)}
+.dosha{display:flex;align-items:center;gap:10px;margin:14px 18px 0;padding:13px 15px;border-radius:var(--r-sm);background:color-mix(in oklab,var(--ok) 12%,var(--surface));border:1px solid color-mix(in oklab,var(--ok) 30%,var(--line))}
+.dosha .di{width:32px;height:32px;border-radius:9px;background:var(--ok);color:#fff;display:grid;place-items:center;flex-shrink:0}
+.dosha .dt{font-size:.82rem;color:var(--ink)}
+.dosha .dt b{display:block}
+/* puja list */
+.puja-card{display:flex;gap:13px;margin:0 18px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;cursor:pointer;transition:.2s var(--ease)}
+.puja-card:active{transform:scale(.985)}
+.puja-card .thumb{width:78px;height:78px;border-radius:12px;flex-shrink:0;position:relative;background:repeating-linear-gradient(115deg,color-mix(in oklab,var(--primary) 22%,var(--surface)) 0 8px,color-mix(in oklab,var(--primary) 12%,var(--surface)) 8px 16px);display:grid;place-items:center;color:var(--primary-deep);font-family:var(--font-d)}
+.puja-card .info{flex:1;min-width:0}
+.puja-card h4{font-family:var(--font-d);font-size:1rem;color:var(--ink);line-height:1.15}
+.puja-card .hi{font-size:.72rem;color:var(--ink-soft)}
+.puja-card .tline{font-size:.74rem;color:var(--ink-soft);margin:5px 0 7px;display:flex;align-items:center;gap:5px}
+.puja-card .prow{display:flex;align-items:center;justify-content:space-between}
+.puja-card .p{font-family:var(--font-d);font-size:1.05rem;color:var(--ink)}
+.mini-tag{font-size:.64rem;font-weight:700;color:var(--ok);background:color-mix(in oklab,var(--ok) 14%,var(--surface));padding:3px 8px;border-radius:6px}
+/* puja detail */
+.pd-hero{height:200px;margin:0 0 0;position:relative;background:repeating-linear-gradient(115deg,color-mix(in oklab,var(--primary) 24%,var(--surface)) 0 13px,color-mix(in oklab,var(--primary) 14%,var(--surface)) 13px 26px);display:grid;place-items:center}
+.backbtn{position:absolute;top:8px;left:14px;z-index:5;width:38px;height:38px;border-radius:12px;background:color-mix(in oklab,var(--surface) 85%,transparent);backdrop-filter:blur(6px);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);cursor:pointer}
+.pd-body{margin-top:-26px;position:relative;background:var(--bg);border-radius:24px 24px 0 0;padding:20px 18px 0}
+.pd-body h2{font-family:var(--font-d);font-size:1.4rem;color:var(--ink)}
+.pd-body .hi{font-family:var(--font-h);font-size:.95rem;color:var(--primary-deep);margin-top:2px}
+.temple{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--ink-soft);margin:8px 0 16px}
+.incl{list-style:none;display:grid;gap:11px;margin:6px 0 0}
+.incl li{display:flex;gap:11px;align-items:flex-start}
+.incl li .ci{width:30px;height:30px;border-radius:9px;flex-shrink:0;background:color-mix(in oklab,var(--primary) 13%,var(--surface));display:grid;place-items:center;color:var(--primary-deep)}
+.incl li .ct{font-size:.85rem;color:var(--ink);line-height:1.4}
+.incl li .ct small{display:block;color:var(--ink-soft);font-size:.75rem}
+.muhurat{margin:16px 0 0;padding:14px 16px;border-radius:var(--r);background:linear-gradient(150deg,var(--surface),var(--surface-2));border:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.muhurat .mi{width:40px;height:40px;border-radius:11px;background:linear-gradient(140deg,var(--primary),var(--primary-deep));color:#fff;display:grid;place-items:center;flex-shrink:0}
+.muhurat .mt{font-size:.72rem;color:var(--ink-soft)}
+.muhurat .mt b{display:block;font-family:var(--font-d);font-size:1rem;color:var(--ink);font-weight:400}
+/* sticky book bar */
+.bookbar{position:absolute;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:color-mix(in oklab,var(--surface) 94%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;z-index:70}
+.bookbar .p{flex-shrink:0}
+.bookbar .p .price{font-size:1.25rem}
+/* astrologers list */
+.astro-card{display:flex;gap:13px;margin:0 18px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.astro-card .av{width:56px;height:56px;border-radius:50%;flex-shrink:0;position:relative;background:linear-gradient(140deg,var(--primary),var(--primary-deep));display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-size:1.2rem}
+.astro-card .av.online::after{content:"";position:absolute;right:1px;bottom:1px;width:13px;height:13px;border-radius:50%;background:var(--ok);border:2.5px solid var(--surface);animation:pulse 2.2s infinite}
+.astro-card .info{flex:1;min-width:0}
+.astro-card .nm{font-family:var(--font-d);font-size:1.02rem;color:var(--ink);display:flex;align-items:center;gap:6px}
+.vbadge{font-size:.6rem;font-weight:700;color:var(--ok);background:color-mix(in oklab,var(--ok) 14%,var(--surface));padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:3px}
+.astro-card .spec{font-size:.76rem;color:var(--ink-soft);margin-top:2px}
+.astro-card .rr{display:flex;gap:12px;font-size:.72rem;color:var(--ink-soft);margin-top:5px}
+.astro-card .rr b{color:var(--ink)}
+.astro-card .bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.astro-card .rate{font-family:var(--font-d);font-size:1rem;color:var(--ink)}
+.astro-card .rate small{font-family:var(--font-b);font-size:.7rem;color:var(--ink-soft)}
+.callbtns{display:flex;gap:8px}
+.btn-sm{padding:9px 15px;font-size:.8rem;border-radius:999px}
+/* chat */
+.chat-hdr{margin:0 18px 12px;padding:12px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.chat-hdr .av{width:42px;height:42px;border-radius:12px;background:linear-gradient(140deg,var(--primary),var(--primary-deep));color:#fff;display:grid;place-items:center;font-size:1.15rem}
+.chat-hdr .nm{font-family:var(--font-d);font-size:1rem;color:var(--ink)}
+.chat-hdr .st{font-size:.72rem;color:var(--ok);display:flex;align-items:center;gap:5px}
+.chat-hdr .st::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.msg{max-width:82%;padding:11px 15px;border-radius:16px;font-size:.86rem;line-height:1.5;margin:0 18px 10px;animation:pop .3s var(--ease)}
+.msg.ai{background:var(--surface);border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:5px}
+.msg.user{background:linear-gradient(140deg,var(--primary),var(--primary-deep));color:#fff;border-bottom-right-radius:5px;margin-left:auto}
+.msg .qk{font-size:.7rem;color:var(--ink-soft);margin-top:6px;font-style:italic}
+.chatctx{margin:0 18px 12px;font-size:.72rem;color:var(--ink-soft);text-align:center;background:var(--surface-2);padding:8px;border-radius:9px}
+.suggest{display:flex;gap:8px;overflow-x:auto;padding:0 18px 10px;scrollbar-width:none}
+.suggest::-webkit-scrollbar{display:none}
+.suggest .s{flex-shrink:0;font-size:.78rem;padding:8px 14px;border-radius:999px;background:var(--surface);border:1.5px solid var(--line);color:var(--ink);cursor:pointer}
+.chatinput{display:flex;gap:9px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
+.chatinput input{flex:1;min-width:0;padding:12px 15px;border:1.5px solid var(--line);border-radius:999px;font-family:var(--font-b);font-size:.9rem;background:var(--bg);color:var(--ink)}
+.chatinput input:focus{outline:none;border-color:var(--primary)}
+.chatinput .send{width:46px;height:46px;border-radius:50%;border:none;background:linear-gradient(140deg,var(--primary),var(--primary-deep));color:#fff;display:grid;place-items:center;cursor:pointer;flex-shrink:0}
+/* bottom nav */
+.tabbar{display:flex;background:color-mix(in oklab,var(--surface) 96%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));position:relative;z-index:80}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;font-size:.62rem;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:.2s var(--ease);background:none;border:none}
+.tab.active{color:var(--primary)}
+.tab .ti{transition:transform .25s var(--ease)}
+.tab.active .ti{transform:translateY(-2px)}
+.disc{font-size:.68rem;color:var(--muted);text-align:center;padding:16px 24px 4px;line-height:1.5}
+.section-lead{font-size:.84rem;color:var(--ink-soft);padding:0 18px;margin:-4px 0 14px;line-height:1.5}
+</style>
+</head>
+<body data-theme="warm">
+<div class="toolbar">
+  <div class="brand">ॐ Awadh <b>Astro</b></div>
+  <div class="sub">Hi-fi prototype · Ayodhya · English + हिंदी · switch a look to compare directions</div>
+  <div class="themes" role="tablist">
+    <button data-set="warm" aria-selected="true"><span class="sw" style="background:#d9871a"></span>Warm Devotional</button>
+    <button data-set="gold" aria-selected="false"><span class="sw" style="background:#e0a63a"></span>Temple Gold</button>
+    <button data-set="sindoor" aria-selected="false"><span class="sw" style="background:#c0392b"></span>Modern Sindoor</button>
+  </div>
+</div>
+
+<div class="device">
+  <div class="notch"></div>
+  <div class="screen-wrap">
+    <div class="app">
+      <div class="statusbar">
+        <span>9:41</span>
+        <span class="dots"><svg class="ic" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M2 20h.01M6 20v-4M10 20v-8M14 20V8M18 20V4"/></svg><svg class="ic" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M12 20h.01"/></svg><svg class="ic" style="width:22px;height:16px" viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="10" rx="2.5"/><path d="M22 11v2" stroke-width="2.4"/><rect x="4" y="9" width="12" height="6" rx="1" fill="currentColor" stroke="none"/></svg></span>
+      </div>
+      <div class="viewport" id="viewport">
+
+        <!-- ============ HOME ============ -->
+        <section class="screen active" data-screen="home">
+          <div class="appbar">
+            <div class="lockup">
+              <div class="om">ॐ</div>
+              <div><div class="nm">Awadh Astro</div><div class="loc"><svg class="ic" style="width:12px;height:12px" viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>Ayodhya, U.P.</div></div>
+            </div>
+            <div class="actions">
+              <div class="wallet"><span class="rupee">₹</span>250</div>
+              <div class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+            </div>
+          </div>
+
+          <div class="hero">
+            <div class="mandala"></div>
+            <span class="eyebrow">Ayodhya-Verified · Online Now</span>
+            <div class="hi-tag">श्री राम की नगरी से</div>
+            <h1>Sacred rituals from the Land of Shri Ram</h1>
+            <p>Free kundali, verified Ayodhya pandits, and pujas performed in real temples — with live video &amp; prasad to your door.</p>
+            <button class="btn btn-primary cta" data-go="kundali">Get my free Kundali<svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+
+          <div class="sec-head" style="margin-top:22px"><span class="sec-title">Astrologers live now</span><span class="all" data-go="astrologers">See all</span></div>
+          <div class="hstrip">
+            <div class="astro-mini" data-go="astrologers"><div class="av online">RS</div><div class="nm">Ram Shankar</div><div class="rt">₹19/min</div></div>
+            <div class="astro-mini" data-go="astrologers"><div class="av online">VM</div><div class="nm">Vidya Mishra</div><div class="rt">₹32/min</div></div>
+            <div class="astro-mini" data-go="astrologers"><div class="av online">PT</div><div class="nm">Pt. Tripathi</div><div class="rt">₹45/min</div></div>
+            <div class="astro-mini" data-go="astrologers"><div class="av online">SD</div><div class="nm">Suman Devi</div><div class="rt">₹24/min</div></div>
+          </div>
+
+          <div class="divider"><span class="di"></span></div>
+          <div class="services">
+            <div class="svc" data-go="kundali"><div class="si"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div class="lbl">Free Kundali</div><div class="hi">कुंडली</div></div>
+            <div class="svc" data-go="match"><div class="si"><svg class="ic" viewBox="0 0 24 24"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/></svg></div><div class="lbl">Match Kundali</div><div class="hi">गुण मिलान</div></div>
+            <div class="svc" data-go="puja"><div class="si"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3c1.5 2 2.5 3.2 2.5 5a2.5 2.5 0 0 1-5 0C9.5 6.2 10.5 5 12 3Z"/><path d="M6 21h12M7 21v-4h10v4M9 13.5c0 1.7 1.3 3 3 3s3-1.3 3-3"/></svg></div><div class="lbl">Online Puja</div><div class="hi">पूजा</div></div>
+            <div class="svc" data-go="astrologers"><div class="si"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></div><div class="lbl">Talk to Pandit</div><div class="hi">परामर्श</div></div>
+            <div class="svc" data-go="chat"><div class="si"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2v1a7 7 0 0 1 4 6v3l2 3H4l2-3v-3a7 7 0 0 1 4-6V4a2 2 0 0 1 2-2Z"/></svg></div><div class="lbl">AI Astro Chat</div><div class="hi">२४×७</div></div>
+            <div class="svc" data-go="puja"><div class="si"><svg class="ic" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg></div><div class="lbl">Awadh Plus</div><div class="hi">₹999/yr</div></div>
+          </div>
+
+          <div class="sec-head" style="margin-top:24px"><span class="sec-title">Puja of the day</span><span class="all" data-go="puja">All pujas</span></div>
+          <div class="puja-feat" data-go="pujadetail">
+            <div class="img"><span class="badge-float"><svg class="ic" style="width:12px;height:12px" viewBox="0 0 24 24"><path d="M12 2 15 9l7 .5-5.4 4.6L18.5 21 12 17l-6.5 4 1.9-6.9L2 9.5 9 9Z"/></svg>Most booked</span><span class="imgtag">[ temple photo — Hanuman Garhi ]</span></div>
+            <div class="bd">
+              <h3>Rudrabhishek at Ayodhya</h3>
+              <div class="meta">Performed live by a verified pandit · Prasad couriered home</div>
+              <div class="row"><span class="price">₹2,100<small> onwards</small></span><button class="btn btn-primary btn-sm" data-go="pujadetail">Book ritual</button></div>
+            </div>
+          </div>
+
+          <div class="divider"><span class="di"></span></div>
+          <div class="trust">
+            <div class="t"><div class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/><path d="M9 12l2 2 4-4"/></svg></div><div class="tt">Ayodhya-verified pandits</div></div>
+            <div class="t"><div class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M15 10l5-3v10l-5-3v-4ZM3 6h12v12H3Z"/></svg></div><div class="tt">Watch it live on video</div></div>
+            <div class="t"><div class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></div><div class="tt">Prasad to your door</div></div>
+          </div>
+          <p class="disc">For spiritual &amp; informational purposes only — not medical, legal or financial advice.</p>
+        </section>
+
+        <!-- ============ KUNDALI ============ -->
+        <section class="screen" data-screen="kundali">
+          <div class="appbar"><div class="lockup"><div class="om">ॐ</div><div><div class="nm">Free Kundali</div><div class="loc">जन्म कुंडली</div></div></div></div>
+          <div class="k-hero">
+            <div class="mandala"></div>
+            <span class="eyebrow" style="position:relative">Your Vedic birth chart</span>
+            <div class="chakra"><div class="in"><div class="big">Simha</div><div class="sm">सिंह · Leo Rashi</div></div></div>
+            <div style="font-family:var(--font-d);font-size:1.2rem;color:var(--ink)">Aarav Sharma</div>
+            <div style="font-size:.76rem;color:var(--ink-soft);margin-top:2px">14 Aug 1996 · 04:20 · Ayodhya</div>
+          </div>
+          <div class="statgrid">
+            <div class="stat"><div class="l">Nakshatra</div><div class="v">Magha <span class="hi">मघा</span></div></div>
+            <div class="stat"><div class="l">Lagna</div><div class="v">Kark <span class="hi">कर्क</span></div></div>
+            <div class="stat"><div class="l">Current Dasha</div><div class="v">Shukra</div></div>
+            <div class="stat"><div class="l">Tithi</div><div class="v">Krishna 8</div></div>
+          </div>
+          <div class="divider"><span class="di"></span></div>
+          <div class="sec-head"><span class="sec-title">Planetary positions</span><span class="all">ग्रह</span></div>
+          <div class="pad"><div class="card" style="padding:4px 16px">
+            <div class="planet-row"><div class="pg">Su</div><div class="pn">Sun · सूर्य</div><div class="ps">Leo · 12th house</div></div>
+            <div class="planet-row"><div class="pg">Mo</div><div class="pn">Moon · चंद्र</div><div class="ps">Leo · 12th house</div></div>
+            <div class="planet-row"><div class="pg">Ma</div><div class="pn">Mars · मंगल</div><div class="ps">Gemini · 10th house</div></div>
+            <div class="planet-row"><div class="pg">Ju</div><div class="pn">Jupiter · गुरु</div><div class="ps">Capricorn · 5th house</div></div>
+            <div class="planet-row"><div class="pg">Ve</div><div class="pn">Venus · शुक्र</div><div class="ps">Cancer · 11th house</div></div>
+          </div></div>
+          <div class="insight"><b>What this means.</b> With Moon in the 12th, you are drawn to solitude and spiritual practice. A strong Jupiter in the 5th favours learning and children. Shukra dasha begins a phase of relationships and comfort.</div>
+          <div class="pad" style="margin-top:16px;display:grid;gap:10px">
+            <button class="btn btn-primary btn-block btn-lg" data-go="astrologers">Discuss with an astrologer</button>
+            <button class="btn btn-ghost btn-block" data-go="match">Match this kundali for marriage</button>
+          </div>
+        </section>
+
+        <!-- ============ MATCHING ============ -->
+        <section class="screen" data-screen="match">
+          <div class="appbar"><div class="lockup"><div class="om">ॐ</div><div><div class="nm">Kundali Matching</div><div class="loc">गुण मिलान · Ashtakoot</div></div></div></div>
+          <div class="match-pair">
+            <div class="mp"><div class="av">A</div><div class="rl">Bride · वधू</div><div class="nm">Aditi</div><div class="dt">12 Feb 1998 · Lucknow</div></div>
+            <div class="match-vs">✦</div>
+            <div class="mp"><div class="av">R</div><div class="rl">Groom · वर</div><div class="nm">Rohan</div><div class="dt">30 Jun 1995 · Ayodhya</div></div>
+          </div>
+          <div class="gauge" id="gauge">
+            <div class="in"><div class="pct">78<span style="font-size:1.2rem">%</span></div><div class="of">28 / 36 Guna</div><div class="vr">✦ EXCELLENT MATCH</div></div>
+          </div>
+          <div class="divider"><span class="di"></span></div>
+          <div class="sec-head"><span class="sec-title">Ashtakoot breakdown</span><span class="all">8 कूट</span></div>
+          <div class="koot">
+            <div class="koot-row"><div class="kn">Varna<small>वर्ण</small></div><div class="bar"><i style="width:100%"></i></div><div class="kp">1/1</div></div>
+            <div class="koot-row"><div class="kn">Vashya<small>वश्य</small></div><div class="bar"><i style="width:100%"></i></div><div class="kp">2/2</div></div>
+            <div class="koot-row"><div class="kn">Tara<small>तारा</small></div><div class="bar"><i style="width:66%"></i></div><div class="kp">2/3</div></div>
+            <div class="koot-row"><div class="kn">Yoni<small>योनि</small></div><div class="bar"><i style="width:75%"></i></div><div class="kp">3/4</div></div>
+            <div class="koot-row"><div class="kn">Graha Maitri<small>ग्रह मैत्री</small></div><div class="bar"><i style="width:100%"></i></div><div class="kp">5/5</div></div>
+            <div class="koot-row"><div class="kn">Gana<small>गण</small></div><div class="bar"><i style="width:83%"></i></div><div class="kp">5/6</div></div>
+            <div class="koot-row"><div class="kn">Bhakoot<small>भकूट</small></div><div class="bar"><i style="width:100%"></i></div><div class="kp">7/7</div></div>
+            <div class="koot-row"><div class="kn">Nadi<small>नाड़ी</small></div><div class="bar"><i style="width:37%"></i></div><div class="kp">3/8</div></div>
+          </div>
+          <div class="dosha"><div class="di"><svg class="ic" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div class="dt"><b>No Mangal Dosha conflict</b>Both charts are Manglik-compatible — no remedy required.</div></div>
+          <div class="insight"><b>Verdict.</b> A strong union with excellent mental &amp; emotional harmony. Nadi koota is low — a Nadi Nivaran puja at Ayodhya is recommended before fixing the date.</div>
+          <div class="pad" style="margin-top:16px;display:grid;gap:10px">
+            <button class="btn btn-primary btn-block btn-lg" data-go="pujadetail">Book Nadi Nivaran Puja</button>
+            <button class="btn btn-ghost btn-block" data-go="astrologers">Consult a marriage astrologer</button>
+          </div>
+        </section>
+
+        <!-- ============ PUJA LIST ============ -->
+        <section class="screen" data-screen="puja">
+          <div class="appbar"><div class="lockup"><div class="om">ॐ</div><div><div class="nm">Online Puja</div><div class="loc">प्रत्यक्ष पूजा · Ayodhya temples</div></div></div></div>
+          <p class="section-lead">Choose a ritual. A verified Ayodhya pandit performs it in a real temple on your calculated muhurat — you watch live, prasad reaches your home.</p>
+          <div class="chips"><span class="chip active">All</span><span class="chip">Navagraha</span><span class="chip">Marriage</span><span class="chip">Prosperity</span><span class="chip">Milestones</span></div>
+          <div style="height:14px"></div>
+          <div class="puja-card" data-go="pujadetail"><div class="thumb">ॐ<span class="badge-float" style="top:6px;left:6px;padding:3px 7px;font-size:.58rem">Popular</span></div><div class="info"><h4>Rudrabhishek</h4><div class="hi">रुद्राभिषेक</div><div class="tline"><svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/></svg>Hanuman Garhi · ~2 hrs</div><div class="prow"><span class="p">₹2,100</span><span class="mini-tag">Live video</span></div></div></div>
+          <div class="puja-card" data-go="pujadetail"><div class="thumb">✦</div><div class="info"><h4>Navagraha Shanti</h4><div class="hi">नवग्रह शांति</div><div class="tline"><svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/></svg>Nageshwarnath · ~3 hrs</div><div class="prow"><span class="p">₹3,500</span><span class="mini-tag">Prasad courier</span></div></div></div>
+          <div class="puja-card" data-go="pujadetail"><div class="thumb">卐</div><div class="info"><h4>Naamkaran Sanskar</h4><div class="hi">नामकरण संस्कार</div><div class="tline"><svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/></svg>Ram Ki Paidi · ~1.5 hrs</div><div class="prow"><span class="p">₹1,800</span><span class="mini-tag">Baby milestone</span></div></div></div>
+          <div class="puja-card" data-go="pujadetail"><div class="thumb">☿</div><div class="info"><h4>Mangal Dosha Nivaran</h4><div class="hi">मंगल दोष निवारण</div><div class="tline"><svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/></svg>Hanuman Garhi · ~2 hrs</div><div class="prow"><span class="p">₹2,700</span><span class="mini-tag">Before marriage</span></div></div></div>
+          <div class="puja-card" data-go="pujadetail"><div class="thumb">ॐ</div><div class="info"><h4>Satyanarayan Katha</h4><div class="hi">सत्यनारायण कथा</div><div class="tline"><svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/></svg>Kanak Bhawan · ~2 hrs</div><div class="prow"><span class="p">₹1,500</span><span class="mini-tag">Housewarming</span></div></div></div>
+        </section>
+
+        <!-- ============ PUJA DETAIL ============ -->
+        <section class="screen" data-screen="pujadetail">
+          <div class="pd-hero">
+            <div class="backbtn" data-go="puja"><svg class="ic" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></div>
+            <span class="badge-float"><svg class="ic" style="width:12px;height:12px" viewBox="0 0 24 24"><path d="M12 2 15 9l7 .5-5.4 4.6L18.5 21 12 17l-6.5 4 1.9-6.9L2 9.5 9 9Z"/></svg>Most booked</span>
+            <span class="imgtag">[ temple photo — Hanuman Garhi, Ayodhya ]</span>
+          </div>
+          <div class="pd-body">
+            <h2>Rudrabhishek</h2>
+            <div class="hi">रुद्राभिषेक पूजा</div>
+            <div class="temple"><svg class="ic" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/></svg>Hanuman Garhi Mandir, Ayodhya · Rated 4.9 ★ by 1,240 devotees</div>
+            <ul class="incl">
+              <li><div class="ci"><svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6Z"/><path d="M9 12l2 2 4-4"/></svg></div><div class="ct">Verified Ayodhya pandit<small>Performs the full ritual in your name &amp; gotra</small></div></li>
+              <li><div class="ci"><svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><path d="M15 10l5-3v10l-5-3zM3 6h12v12H3z"/></svg></div><div class="ct">Live HD video<small>Watch the entire puja on a private stream</small></div></li>
+              <li><div class="ci"><svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></div><div class="ct">Prasad couriered home<small>Sanctified prasad &amp; rudraksha within 5 days</small></div></li>
+              <li><div class="ci"><svg class="ic" style="width:17px;height:17px" viewBox="0 0 24 24"><path d="M4 4h16v4H4zM6 8v12h12V8M9 12h6"/></svg></div><div class="ct">Sankalp certificate<small>Digital proof with photos &amp; recording</small></div></li>
+            </ul>
+            <div class="muhurat">
+              <div class="mi"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div class="mt">Your calculated muhurat<b>Mon, 27 Jul · 5:48–7:12 AM (Brahma Muhurat)</b></div>
+            </div>
+            <div class="insight" style="margin:16px 0 0"><b>Why Ayodhya.</b> We don't dropship gemstones — we deliver your presence in a holy place. The ritual is performed where Shri Ram was born.</div>
+            <div style="height:110px"></div>
+          </div>
+          <div class="bookbar">
+            <div class="p"><div class="price">₹2,100</div><div style="font-size:.68rem;color:var(--ink-soft)">incl. prasad courier</div></div>
+            <button class="btn btn-primary btn-block btn-lg">Book this puja</button>
+          </div>
+        </section>
+
+        <!-- ============ ASTROLOGERS ============ -->
+        <section class="screen" data-screen="astrologers">
+          <div class="appbar"><div class="lockup"><div class="om">ॐ</div><div><div class="nm">Astrologers</div><div class="loc">ज्योतिषी · Online now</div></div></div><div class="wallet"><span class="rupee">₹</span>250</div></div>
+          <div class="chips"><span class="chip active">All</span><span class="chip">Online</span><span class="chip">Marriage</span><span class="chip">Career</span><span class="chip">Vedic</span><span class="chip">Tarot</span></div>
+          <div style="height:14px"></div>
+          <div class="astro-card"><div class="av online">RS</div><div class="info"><div class="nm">Pt. Ram Shankar <span class="vbadge"><svg class="ic" style="width:9px;height:9px" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Ayodhya</span></div><div class="spec">Vedic · Marriage · 18 yrs exp</div><div class="rr"><span>★ <b>4.9</b> (2.1k)</span><span>Hindi, अवधी</span></div><div class="bottom"><span class="rate">₹19<small>/min</small></span><div class="callbtns"><button class="btn btn-ghost btn-sm" data-go="chat">Chat</button><button class="btn btn-primary btn-sm">Call</button></div></div></div></div>
+          <div class="astro-card"><div class="av online">VM</div><div class="info"><div class="nm">Vidya Mishra <span class="vbadge"><svg class="ic" style="width:9px;height:9px" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Ayodhya</span></div><div class="spec">Numerology · Career · 12 yrs exp</div><div class="rr"><span>★ <b>4.8</b> (1.4k)</span><span>Hindi, English</span></div><div class="bottom"><span class="rate">₹32<small>/min</small></span><div class="callbtns"><button class="btn btn-ghost btn-sm" data-go="chat">Chat</button><button class="btn btn-primary btn-sm">Call</button></div></div></div></div>
+          <div class="astro-card"><div class="av online">PT</div><div class="info"><div class="nm">Pt. R. Tripathi <span class="vbadge"><svg class="ic" style="width:9px;height:9px" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Ayodhya</span></div><div class="spec">KP System · Muhurat · 25 yrs exp</div><div class="rr"><span>★ <b>5.0</b> (3.6k)</span><span>Hindi, Sanskrit</span></div><div class="bottom"><span class="rate">₹45<small>/min</small></span><div class="callbtns"><button class="btn btn-ghost btn-sm" data-go="chat">Chat</button><button class="btn btn-primary btn-sm">Call</button></div></div></div></div>
+          <div class="astro-card"><div class="av">SD</div><div class="info"><div class="nm">Suman Devi <span class="vbadge"><svg class="ic" style="width:9px;height:9px" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Ayodhya</span></div><div class="spec">Tarot · Relationships · 9 yrs exp</div><div class="rr"><span>★ <b>4.7</b> (980)</span><span>Hindi, English</span></div><div class="bottom"><span class="rate">₹24<small>/min</small></span><div class="callbtns"><button class="btn btn-ghost btn-sm">Busy</button><button class="btn btn-primary btn-sm">Notify</button></div></div></div></div>
+        </section>
+
+        <!-- ============ CHAT ============ -->
+        <section class="screen" data-screen="chat">
+          <div class="appbar"><div class="lockup"><div class="om">ॐ</div><div><div class="nm">AI Astro Chat</div><div class="loc">२४×७ · reads your real chart</div></div></div></div>
+          <div class="chat-hdr"><div class="av">✦</div><div style="flex:1"><div class="nm">Awadh AI Jyotish</div><div class="st">Online · using Aarav's Simha kundali</div></div></div>
+          <div class="chatctx">Your computed birth chart is attached to this conversation. Answers are AI-generated for guidance only.</div>
+          <div class="msg ai">Namaste Aarav ॐ I have your kundali — Simha rashi, Magha nakshatra, currently in Shukra dasha. What would you like to know?</div>
+          <div class="msg user">Is this a good time to start a new business?</div>
+          <div class="msg ai">Shukra dasha favours ventures involving creativity, beauty or partnerships. With Jupiter strong in your 5th house, the period after your 27 Jul muhurat is auspicious. Avoid signing on Rahu Kaal days.<div class="qk">Tip: I can calculate your exact muhurat — just ask.</div></div>
+          <div class="suggest"><span class="s">Best day to buy gold?</span><span class="s">My Sade Sati status</span><span class="s">Career in 2026</span></div>
+          <div class="chatinput"><input placeholder="Ask about your chart…" aria-label="message"><button class="send"><svg class="ic" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>
+        </section>
+
+      </div>
+      <!-- bottom nav -->
+      <nav class="tabbar">
+        <button class="tab active" data-tab="home"><span class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></span>Home</button>
+        <button class="tab" data-tab="kundali"><span class="ti"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></span>Kundali</button>
+        <button class="tab" data-tab="puja"><span class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3c1.5 2 2.5 3.2 2.5 5a2.5 2.5 0 0 1-5 0C9.5 6.2 10.5 5 12 3Z"/><path d="M6 21h12M7 21v-4h10v4"/></svg></span>Puja</button>
+        <button class="tab" data-tab="astrologers"><span class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></span>Talk</button>
+        <button class="tab" data-tab="chat"><span class="ti"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2v1a7 7 0 0 1 4 6v3l2 3H4l2-3v-3a7 7 0 0 1 4-6V4a2 2 0 0 1 2-2Z"/></svg></span>AI Chat</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+const vp=document.getElementById('viewport');
+const screens=[...document.querySelectorAll('.screen')];
+const tabs=[...document.querySelectorAll('.tab')];
+const tabForScreen={home:'home',kundali:'kundali',match:'kundali',puja:'puja',pujadetail:'puja',astrologers:'astrologers',chat:'chat'};
+function go(name){
+  screens.forEach(s=>s.classList.toggle('active',s.dataset.screen===name));
+  const tb=tabForScreen[name]||name;
+  tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===tb));
+  vp.scrollTop=0;
+  if(name==='match')animateGauge();
+}
+document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();go(el.dataset.go)}));
+tabs.forEach(t=>t.addEventListener('click',()=>go(t.dataset.tab)));
+// theme switch
+document.querySelectorAll('.themes button').forEach(b=>b.addEventListener('click',()=>{
+  document.body.dataset.theme=b.dataset.set;
+  document.querySelectorAll('.themes button').forEach(x=>x.setAttribute('aria-selected',x===b));
+}));
+// gauge (percentage ring)
+function animateGauge(){
+  const g=document.getElementById('gauge');
+  const cs=getComputedStyle(document.body);
+  const p=cs.getPropertyValue('--primary').trim(),pd=cs.getPropertyValue('--primary-deep').trim(),ln=cs.getPropertyValue('--line').trim();
+  const pct=78;
+  g.style.background=`conic-gradient(${pd} 0deg, ${p} ${pct*3.6}deg, ${ln} ${pct*3.6}deg 360deg)`;
+}
+animateGauge();
+</script>
+</body>
+</html>

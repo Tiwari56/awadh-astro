@@ -2,9 +2,19 @@ import Link from "next/link";
 
 const features = [
   {
+    title: "🛕 Puja in Ayodhya, in Your Name",
+    text: "Can't travel to Ayodhya? A verified pandit performs your Rudrabhishek, Navagraha Shanti or Naamkaran in a real Ayodhya temple — streamed live, with prasad couriered worldwide.",
+    href: "/seva",
+  },
+  {
     title: "🪔 Free Kundali in Seconds",
-    text: "Enter your birth details and instantly see your rashi, nakshatra, planetary positions, and current dasha — in Hindi and English.",
+    text: "Enter your birth details and instantly see your rashi, nakshatra, panchang, dashas, dosha checks, and full planetary positions — in Hindi and English.",
     href: "/kundali",
+  },
+  {
+    title: "💑 Kundali Matching for Marriage",
+    text: "Ashtakoot Guna Milan — the 36-point Vedic compatibility check. See the koota breakdown, Mangal Dosha status, and remedies before fixing a match.",
+    href: "/match",
   },
   {
     title: "🙏 Ayodhya-Verified Astrologers",
