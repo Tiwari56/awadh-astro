@@ -1,0 +1,41 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const links = [
+  { href: "/", label: "Home" },
+  { href: "/seva", label: "Seva / Puja" },
+  { href: "/kundali", label: "Free Kundali" },
+  { href: "/match", label: "Match Kundali" },
+  { href: "/astrologers", label: "Talk to Astrologer" },
+  { href: "/chat", label: "AI Astro Chat" },
+  { href: "/plus", label: "Awadh Plus" },
+];
+
+export default function Header() {
+  const pathname = usePathname();
+  return (
+    <header className="site-header">
+      <div className="container header-inner">
+        <Link href="/" className="logo">
+          <span className="om" aria-hidden="true">ॐ</span>
+          Awadh <span>Astro</span>
+        </Link>
+        <nav className="nav">
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={
+                (l.href === "/" ? pathname === "/" : pathname.startsWith(l.href)) ? "active" : ""
+              }
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navItems = [
+  { label: "Puja / Seva", href: "/seva" },
   {
     label: "Consultations",
     href: "/astrologers",
@@ -15,6 +16,15 @@ const navItems = [
     ],
   },
   {
+    label: "Free Services",
+    href: "/kundali",
+    dropdown: [
+      { label: "Free Kundali", href: "/kundali" },
+      { label: "Kundali Matching", href: "/match" },
+      { label: "AI Chat", href: "/chat" },
+    ],
+  },
+  {
     label: "Horoscope",
     href: "/kundali",
     dropdown: [
@@ -22,15 +32,6 @@ const navItems = [
       { label: "Weekly Horoscope", href: "/kundali" },
       { label: "Monthly Horoscope", href: "/kundali" },
       { label: "Yearly Horoscope", href: "/kundali" },
-    ],
-  },
-  {
-    label: "Free Services",
-    href: "/kundali",
-    dropdown: [
-      { label: "Free Kundali", href: "/kundali" },
-      { label: "Kundali Matching", href: "/kundali" },
-      { label: "AI Chat", href: "/chat" },
     ],
   },
   { label: "Awadh Plus", href: "/plus" },

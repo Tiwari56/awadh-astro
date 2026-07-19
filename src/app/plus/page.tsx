@@ -1,10 +1,10 @@
-import { PLUS_PLANS } from "@/lib/plans";
+import { PLUS_PLANS } from "@/lib/data/plans";
 
 export default function PlusPage() {
   return (
     <div className="container section">
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>Awadh Plus</h2>
-      <p style={{ margin: "0 auto 40px", color: "rgba(255,255,255,0.7)", maxWidth: 640, textAlign: "center", lineHeight: 1.6 }}>
+      <p style={{ margin: "0 auto 40px", color: "var(--ink-soft)", maxWidth: 640, textAlign: "center", lineHeight: 1.6 }}>
         Your kundali, working for you every day. Plus members receive proactive notifications —
         auspicious muhurat for purchases and new ventures, caution days to avoid, and monthly
         personalized reports.
@@ -31,7 +31,7 @@ export default function PlusPage() {
         ))}
       </div>
 
-      <p style={{ marginTop: 40, fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
+      <p style={{ marginTop: 40, fontSize: "0.85rem", color: "var(--muted)", textAlign: "center" }}>
         Payments will be processed via Razorpay (UPI, cards, net banking). Cancel anytime.
       </p>
     </div>

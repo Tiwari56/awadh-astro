@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import AstrologerCard from "@/components/AstrologerCard";
-import { getAstrologers } from "@/lib/astrologers";
+import AstrologerCard from "@/components/ui/AstrologerCard";
+import { getAstrologers } from "@/lib/data/astrologers";
 import type { Astrologer, AstrologerStatus } from "@/types";
 
 type Filter = "all" | AstrologerStatus;
@@ -25,8 +25,8 @@ export default function AstrologersPage() {
   return (
     <div className="container section">
       <h2>Talk to an Astrologer</h2>
-      <p style={{ marginBottom: 20, color: "#4b5563" }}>
-        <strong style={{ color: "#16a34a" }}>{online} astrologers online now</strong> — first
+      <p style={{ marginBottom: 20, color: "var(--ink-soft)" }}>
+        <strong style={{ color: "var(--green)" }}>{online} astrologers online now</strong> — first
         minute free for new users.
       </p>
 

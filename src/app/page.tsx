@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import PromoModal from "@/components/PromoModal";
+import PromoModal from "@/components/ui/PromoModal";
 
 /* ── Static data ──────────────────────────────── */
 const zodiacSigns = [
@@ -46,9 +46,9 @@ const astrologers = [
 
 const services = [
   { icon: "🪔", title: "Free Kundali",      desc: "Detailed birth chart in seconds",       href: "/kundali",      bg: "#fef8e8" },
-  { icon: "💑", title: "Kundali Matching",  desc: "Marriage compatibility report",          href: "/kundali",      bg: "#fce8f0" },
+  { icon: "💑", title: "Kundali Matching",  desc: "Marriage compatibility report",          href: "/match",        bg: "#fce8f0" },
   { icon: "✨", title: "AI Astro Chat",     desc: "24×7 AI-powered guidance",              href: "/chat",         bg: "#e8f0fe" },
-  { icon: "🔱", title: "Online Puja",       desc: "Live rituals from Ayodhya temples",     href: "/",             bg: "#fde8d8" },
+  { icon: "🔱", title: "Online Puja",       desc: "Live rituals from Ayodhya temples",     href: "/seva",         bg: "#fde8d8" },
   { icon: "🔔", title: "Daily Horoscope",   desc: "Personalized daily predictions",         href: "/kundali",      bg: "#e8fef0" },
   { icon: "📿", title: "Awadh Plus",        desc: "Muhurat alerts & premium access",        href: "/plus",         bg: "#f5e8ff" },
   { icon: "🧿", title: "Tarot Reading",     desc: "Unlock hidden truths with Tarot",       href: "/chat",         bg: "#e8f8ff" },
@@ -111,7 +111,7 @@ export default function HomePage() {
   const z = zodiacSigns[activeZodiac];
 
   return (
-    <>
+    <div className="landing">
       {/* ── HERO ─────────────────────────────────── */}
       <section className="hero">
         {/* Background layers */}
@@ -343,7 +343,7 @@ export default function HomePage() {
           <div className="services-grid">
             {services.map((s) => (
               <Link key={s.title} href={s.href} className="service-card">
-                <div className="service-icon" style={{ background: s.bg }}>{s.icon}</div>
+                <div className="service-icon">{s.icon}</div>
                 <div>
                   <div className="service-title">{s.title}</div>
                   <div className="service-desc">{s.desc}</div>
@@ -465,6 +465,6 @@ export default function HomePage() {
         </div>
       </section>
       <PromoModal />
-    </>
+    </div>
   );
 }

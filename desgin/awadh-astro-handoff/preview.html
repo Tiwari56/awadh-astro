@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awadh Astro — Temple Gold preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/app/globals.css">
+<style>
+/* map next/font vars to loaded webfonts for this static preview only */
+html{--font-display:'Marcellus';--font-body:'Mukta'}
+.pv-note{max-width:1040px;margin:0 auto;padding:14px 20px;color:var(--muted);font-size:.82rem;border-bottom:1px solid var(--line)}
+.pv-h{font-family:var(--font-display-stack);color:var(--gold-bright);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin:34px 0 4px}
+</style>
+</head>
+<body>
+<header class="site-header"><div class="container header-inner">
+  <a class="logo"><span class="om">ॐ</span>Awadh <span>Astro</span></a>
+  <nav class="nav"><a>Home</a><a>Seva / Puja</a><a>Free Kundali</a><a class="active">Match Kundali</a><a>Talk to Astrologer</a><a>AI Astro Chat</a><a>Awadh Plus</a></nav>
+</div></header>
+
+<div class="pv-note">Static preview of the Temple Gold stylesheet applied to real page markup (Kundali Matching + component samples). This is CSS-only — the interactive app runs in Next.js.</div>
+
+<div class="container section">
+  <h2>Kundali Matching</h2>
+  <p style="color:var(--ink-soft);margin-bottom:22px">Ashtakoot Guna Milan — the 36-point Vedic compatibility system used for marriage. <span class="hi">गुण मिलान</span></p>
+
+  <div class="match-pair">
+    <div class="mp"><div class="mp-av">A</div><div class="mp-role">Bride · <span class="hi">वधू</span></div><div class="mp-name">Aditi</div><div class="mp-dt">1998-02-12 · Lucknow</div></div>
+    <div class="match-vs">✦</div>
+    <div class="mp"><div class="mp-av">R</div><div class="mp-role">Groom · <span class="hi">वर</span></div><div class="mp-name">Rohan</div><div class="mp-dt">1995-06-30 · Ayodhya</div></div>
+  </div>
+
+  <div class="gauge" style="--pct:78"><div class="gauge-in"><div class="gauge-pct">78<small>%</small></div><div class="gauge-of">28 / 36 Guna</div><div class="gauge-verdict">✦ EXCELLENT MATCH</div></div></div>
+
+  <div class="divider"><span class="di"></span></div>
+  <h3 class="kundali-section-title">Ashtakoot breakdown</h3>
+  <div class="card" style="padding:6px 20px">
+    <div class="koot-row"><div class="koot-name">Varna<small class="hi">वर्ण</small></div><div class="koot-bar"><i style="width:100%"></i></div><div class="koot-pct">1/1</div></div>
+    <div class="koot-row"><div class="koot-name">Vashya<small class="hi">वश्य</small></div><div class="koot-bar"><i style="width:100%"></i></div><div class="koot-pct">2/2</div></div>
+    <div class="koot-row"><div class="koot-name">Tara<small class="hi">तारा</small></div><div class="koot-bar"><i style="width:66%"></i></div><div class="koot-pct">2/3</div></div>
+    <div class="koot-row"><div class="koot-name">Yoni<small class="hi">योनि</small></div><div class="koot-bar"><i style="width:75%"></i></div><div class="koot-pct">3/4</div></div>
+    <div class="koot-row"><div class="koot-name">Graha Maitri<small class="hi">ग्रह मैत्री</small></div><div class="koot-bar"><i style="width:100%"></i></div><div class="koot-pct">5/5</div></div>
+    <div class="koot-row"><div class="koot-name">Gana<small class="hi">गण</small></div><div class="koot-bar"><i style="width:83%"></i></div><div class="koot-pct">5/6</div></div>
+    <div class="koot-row"><div class="koot-name">Bhakoot<small class="hi">भकूट</small></div><div class="koot-bar"><i style="width:100%"></i></div><div class="koot-pct">7/7</div></div>
+    <div class="koot-row"><div class="koot-name">Nadi<small class="hi">नाड़ी</small></div><div class="koot-bar"><i style="width:37%"></i></div><div class="koot-pct">3/8</div></div>
+  </div>
+
+  <div class="match-dosha"><div class="md-ic">✓</div><div class="md-t"><b>No Mangal Dosha conflict</b>Both charts are Manglik-compatible — no remedy required.</div></div>
+  <p class="insight"><strong>Verdict.</strong> A strong union. Nadi koota is on the lower side — a Nadi Nivaran puja at Ayodhya is recommended before finalising.</p>
+  <div class="hero-actions" style="justify-content:flex-start;margin-top:24px;max-width:none"><a class="btn btn-primary">Book a Remedial Puja</a><a class="btn btn-outline">Consult a Marriage Astrologer</a></div>
+
+  <p class="pv-h">Component samples · Astrologer card · Puja card · Buttons &amp; chips</p>
+  <div class="grid grid-3" style="margin-top:12px">
+    <div class="card astro-card">
+      <div class="astro-top"><div class="avatar">RS</div><div><div class="astro-name">Pt. Ramesh Shastri</div><div class="verified">✔ Ayodhya Verified</div><div class="astro-meta"><span class="status-dot status-online"></span>Online · ⭐ 4.9 · 4,120 consults</div></div></div>
+      <div class="astro-tags"><span class="tag">Vedic</span><span class="tag">Kundali Milan</span><span class="tag">Muhurat</span></div>
+      <div class="astro-meta">22 yrs experience · Hindi, Awadhi</div>
+      <div class="astro-bottom"><span class="rate">₹35<small>/min</small></span><button class="btn btn-primary btn-sm">Chat Now</button></div>
+    </div>
+    <div class="card puja-card"><span class="puja-tag">Most Requested</span><h3>Rudrabhishek</h3><p class="puja-temple">📍 Hanuman Garhi, Ayodhya</p><p class="puja-purpose">Peace, health &amp; removal of obstacles.</p><div class="puja-events"><span class="tag">Marriage</span><span class="tag">Health</span></div><div class="puja-perks"><span>📹 Live video</span><span>🌍 Ships worldwide</span><span>⏱ 120 min</span></div><div class="puja-foot"><span class="rate">₹2,100</span><button class="btn btn-primary btn-sm">Book Seva</button></div></div>
+    <div class="card" style="display:grid;gap:12px;align-content:start"><div class="filter-bar" style="margin:0"><button class="chip active">All</button><button class="chip">Online</button><button class="chip">Marriage</button></div><button class="btn btn-primary">Primary action</button><button class="btn btn-outline">Outline action</button><div class="badge badge-ok" style="justify-self:start">Clear</div><div class="badge badge-warn" style="justify-self:start">Present · Moderate</div></div>
+  </div>
+</div>
+
+<footer class="site-footer"><p>Awadh Astro · Ayodhya, Uttar Pradesh · Guidance is for informational and spiritual purposes only.</p></footer>
+</body>
+</html>
