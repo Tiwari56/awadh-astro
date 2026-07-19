@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { PUJA_OFFERINGS } from "@/lib/pujas";
+import { PUJA_OFFERINGS } from "@/lib/data/pujas";
 import type { PujaOffering } from "@/types";
 
 const COUNTRIES = ["India", "USA", "UK", "UAE", "Canada", "Australia", "Singapore", "Other"];

@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { matchKundali, type MatchPerson, type MatchResult } from "@/lib/matching";
+import { matchKundali, type MatchPerson, type MatchResult } from "@/lib/astrology/matching";
 
 const EMPTY: MatchPerson = { name: "", dateOfBirth: "", timeOfBirth: "", placeOfBirth: "" };
 

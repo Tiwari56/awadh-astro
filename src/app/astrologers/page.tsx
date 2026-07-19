@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import AstrologerCard from "@/components/AstrologerCard";
-import { getAstrologers } from "@/lib/astrologers";
+import AstrologerCard from "@/components/ui/AstrologerCard";
+import { getAstrologers } from "@/lib/data/astrologers";
 import type { Astrologer, AstrologerStatus } from "@/types";
 
 type Filter = "all" | AstrologerStatus;
