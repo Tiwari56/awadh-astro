@@ -1,41 +1,38 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Mukta } from "next/font/google";
+import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 
-// Display serif for headings & logo — warm, premium, a touch traditional.
-const display = Fraunces({
+// Sleek, modern geometric sans-serif for headings & logo
+const display = Outfit({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "900"],
-  style: ["normal", "italic"],
+  weight: ["500", "600", "700", "800", "900"],
   variable: "--font-display",
   display: "swap",
 });
 
-// Body/UI sans — highly legible and Devanagari-capable for the Hindi-first UI.
-const body = Mukta({
-  subsets: ["latin", "devanagari"],
-  weight: ["400", "500", "600", "700"],
+// Clean UI sans for body text
+const body = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   variable: "--font-body",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Awadh Astro — Astrology from the Land of Shri Ram",
+  title: "Awadh Astro — Modern Astrology",
   description:
-    "Free kundali, live consultations with Ayodhya-verified astrologers, AI astro chat, and personalized muhurat alerts.",
+    "Free kundali, live consultations with Ayodhya-verified astrologers, and AI astro chat.",
   appleWebApp: { capable: true, title: "Awadh Astro", statusBarStyle: "default" },
 };
 
-// Mobile-first viewport: fit device width, allow user zoom (accessibility), and
-// tint the browser chrome saffron so the app feels native on Android/iOS.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#92400e",
-  colorScheme: "light",
+  themeColor: "#050505",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -42,7 +42,7 @@ export default function KundaliPage() {
       <h2>Free Kundali &amp; Birth Chart</h2>
 
       {!result && (
-        <form className="form card" onSubmit={onSubmit}>
+        <form className="inner-card inner-form" onSubmit={onSubmit}>
           <div className="field">
             <label htmlFor="name">Full Name</label>
             <input id="name" required value={form.name} placeholder="e.g. Nishit Tiwari"
@@ -72,7 +72,7 @@ export default function KundaliPage() {
               <option value="other">Other</option>
             </select>
           </div>
-          {error && <p style={{ color: "#dc2626", fontSize: "0.9rem" }}>{error}</p>}
+          {error && <p style={{ color: "#ef4444", fontSize: "0.9rem", marginTop: "-10px" }}>{error}</p>}
           <button className="btn btn-primary" type="submit" disabled={loading}>
             {loading ? "Computing…" : "Generate Kundali"}
           </button>
@@ -89,8 +89,8 @@ export default function KundaliPage() {
             <div className="stat"><div className="label">Current Dasha</div><div className="value">{result.currentDasha}</div></div>
           </div>
 
-          <div className="card table-wrap">
-            <table className="planets">
+          <div className="inner-card" style={{ marginTop: 24, padding: "20px 32px", overflowX: "auto" }}>
+            <table className="planets-table">
               <thead>
                 <tr><th>Planet</th><th>Sign</th><th>House</th><th>Degree</th><th>Retrograde</th></tr>
               </thead>
