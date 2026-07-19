@@ -74,13 +74,12 @@ export default function ChatPage() {
             placeholder="Ask about your kundali, career, marriage…"
             aria-label="Chat message"
           />
-          <button className="btn btn-primary btn-sm" type="submit" disabled={sending || !input.trim()}>
+          <button className="btn btn-primary" style={{ padding: "0 24px", minHeight: "auto" }} type="submit" disabled={sending || !input.trim()}>
             Send
           </button>
         </form>
         <p className="ai-disclaimer">
-          You are chatting with an AI. Guidance is spiritual/informational only — not medical,
-          legal, or financial advice.
+          You are chatting with an AI. Guidance is spiritual/informational only.
         </p>
       </div>
     </div>
