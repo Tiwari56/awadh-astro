@@ -1,26 +1,47 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { PUJA_OFFERINGS } from "@/lib/data/pujas";
+import { Suspense, useEffect, useMemo, useState, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { PUJA_OFFERINGS, PUJA_ADDONS, isCityServiceable } from "@/lib/data/pujas";
 import type { PujaOffering } from "@/types";
 
 const COUNTRIES = ["India", "USA", "UK", "UAE", "Canada", "Australia", "Singapore", "Other"];
 
-export default function SevaPage() {
+function SevaPageInner() {
+  const searchParams = useSearchParams();
   const [selected, setSelected] = useState<PujaOffering | null>(null);
   const [booked, setBooked] = useState(false);
+  const [addonIds, setAddonIds] = useState<string[]>([]);
   const [form, setForm] = useState({
     devoteeName: "",
     gotra: "",
     sankalp: "",
     preferredDate: "",
+    city: "",
     shippingCountry: "India",
     shippingAddress: "",
     wantsLiveVideo: true,
   });
 
+  // Deep link from the kundali remedy CTA: /seva?puja=<id> auto-opens that booking form.
+  useEffect(() => {
+    const pujaId = searchParams.get("puja");
+    if (pujaId) {
+      const found = PUJA_OFFERINGS.find((p) => p.id === pujaId);
+      if (found) setSelected(found);
+    }
+  }, [searchParams]);
+
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const toggleAddon = (id: string) =>
+    setAddonIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const cityServiceable = isCityServiceable(form.city);
+  const selectedAddons = useMemo(() => PUJA_ADDONS.filter((a) => addonIds.includes(a.id)), [addonIds]);
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.priceINR, 0);
+  const total = (selected?.priceINR ?? 0) + addonsTotal;
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -39,14 +60,15 @@ export default function SevaPage() {
             Your <strong>{selected.name}</strong> at <strong>{selected.temple}</strong> has been
             requested in the name of <strong>{form.devoteeName}</strong>
             {form.gotra ? ` (${form.gotra} gotra)` : ""}.
+            {selectedAddons.length > 0 && ` Add-ons: ${selectedAddons.map((a) => a.label).join(", ")}.`}
           </p>
           <p className="confirm-note">
             Our team will compute the auspicious muhurat from the sankalp and confirm your date &amp;
             {form.wantsLiveVideo ? " live video link" : " recording"} on WhatsApp. Prasad will be
             couriered to {form.shippingCountry}.
           </p>
-          <p className="confirm-amount">Amount to confirm: ₹{selected.priceINR.toLocaleString("en-IN")}</p>
-          <button className="btn btn-primary" onClick={() => { setBooked(false); setSelected(null); }}>
+          <p className="confirm-amount">Amount to confirm: ₹{total.toLocaleString("en-IN")}</p>
+          <button className="btn btn-primary" onClick={() => { setBooked(false); setSelected(null); setAddonIds([]); }}>
             Book Another Seva
           </button>
         </div>
@@ -84,6 +106,37 @@ export default function SevaPage() {
             <input id="pd" type="date" value={form.preferredDate}
               onChange={(e) => set("preferredDate", e.target.value)} />
           </div>
+
+          {/* Add-ons cart — live total updates as items are toggled */}
+          <div className="field">
+            <label>Add-on Services <span className="opt">(optional)</span></label>
+            <div className="addon-list">
+              {PUJA_ADDONS.map((a) => (
+                <label key={a.id} className="addon-row">
+                  <input type="checkbox" checked={addonIds.includes(a.id)} onChange={() => toggleAddon(a.id)} />
+                  <span className="addon-info">
+                    <span className="addon-label">{a.label}</span>
+                    <span className="addon-desc">{a.description}</span>
+                  </span>
+                  <span className="addon-price">+₹{a.priceINR.toLocaleString("en-IN")}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="ct">Your City <span className="opt">(for bhandara/in-person add-on)</span></label>
+            <input id="ct" value={form.city} placeholder="e.g. Lucknow"
+              onChange={(e) => set("city", e.target.value)} />
+            {addonIds.includes("bhandara") && (
+              <p className={`city-note ${cityServiceable ? "ok" : "warn"}`}>
+                {cityServiceable
+                  ? "✓ Bhandara/NGO delivery is available in your city."
+                  : "In-person bhandara isn't serviceable there yet — we'll convert this to a prasad-courier equivalent and confirm on WhatsApp."}
+              </p>
+            )}
+          </div>
+
           <div className="field">
             <label htmlFor="sc">Prasad Shipping Country</label>
             <select id="sc" value={form.shippingCountry}
@@ -103,9 +156,17 @@ export default function SevaPage() {
             <span>Stream the puja live to me (video call)</span>
           </label>
 
+          {selectedAddons.length > 0 && (
+            <div className="cart-summary">
+              <div className="cart-row"><span>{selected.name}</span><span>₹{selected.priceINR.toLocaleString("en-IN")}</span></div>
+              {selectedAddons.map((a) => (
+                <div className="cart-row" key={a.id}><span>+ {a.label}</span><span>₹{a.priceINR.toLocaleString("en-IN")}</span></div>
+              ))}
+            </div>
+          )}
           <div className="puja-price-row">
             <span>Total</span>
-            <strong>₹{selected.priceINR.toLocaleString("en-IN")}</strong>
+            <strong>₹{total.toLocaleString("en-IN")}</strong>
           </div>
           <button className="btn btn-primary" type="submit">Offer Sankalp</button>
           <p className="ai-disclaimer">
@@ -151,5 +212,13 @@ export default function SevaPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function SevaPage() {
+  return (
+    <Suspense fallback={<div className="container section">Loading…</div>}>
+      <SevaPageInner />
+    </Suspense>
   );
 }

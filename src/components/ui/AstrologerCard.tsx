@@ -28,6 +28,14 @@ export default function AstrologerCard({ astrologer }: { astrologer: Astrologer 
         ))}
       </div>
 
+      <div className="astro-tags">
+        {a.consultModes.includes("online") && <span className="tag tag-mode">💻 Online</span>}
+        {a.consultModes.includes("in-person") && <span className="tag tag-mode">🛕 In-Person</span>}
+      </div>
+      {a.officeLocation && a.consultModes.includes("in-person") && (
+        <div className="astro-meta">📍 {a.officeLocation}</div>
+      )}
+
       <div className="astro-meta">
         {a.experienceYears} yrs experience · {a.languages.join(", ")}
       </div>

@@ -75,6 +75,9 @@ export interface KundaliResult {
 
 export type AstrologerStatus = "online" | "busy" | "offline";
 
+/** How a devotee can consult this astrologer — distinct from live presence (`status`). */
+export type ConsultMode = "online" | "in-person";
+
 export interface Astrologer {
   id: string;
   name: string;
@@ -87,6 +90,8 @@ export interface Astrologer {
   totalConsults: number;
   status: AstrologerStatus;
   ayodhyaVerified: boolean;
+  consultModes: ConsultMode[]; // e.g. ["online"] or ["online", "in-person"]
+  officeLocation?: string; // set when "in-person" is offered
 }
 
 export interface ChatMessage {

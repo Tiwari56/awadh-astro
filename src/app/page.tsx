@@ -192,10 +192,10 @@ export default function HomePage() {
           { icon: "📹", label: "Watch rituals live" },
           { icon: "📦", label: "Prasad to your door" },
           { icon: "🔒", label: "100% secure payments" },
-          { icon: "🌐", label: "13 languages" },
+          { icon: "🌐", label: "4 languages" },
         ].map((t) => (
           <div key={t.label} className="trust-item">
-            <span style={{ fontSize: "1.1rem" }}>{t.icon}</span>
+            <span className="trust-item-icon">{t.icon}</span>
             <span>{t.label}</span>
           </div>
         ))}
@@ -384,6 +384,53 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT / CONTACT ──────────────────────── */}
+      <section className="about-section" id="about">
+        <div className="container">
+          <span className="section-eyebrow" style={{ color: "var(--saffron-dark)" }}>Who We Are</span>
+          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>About Awadh Astro</h2>
+          <p className="section-sub section-sub-dark">Rooted in Ayodhya, built for anyone seeking clarity from Vedic wisdom.</p>
+
+          <div className="about-grid">
+            <div className="card about-card">
+              <h3>Our Story</h3>
+              <p style={{ marginBottom: 14 }}>
+                Awadh Astro was founded in Ayodhya — the land of Shri Ram — to bring authentic, temple-verified
+                Vedic guidance to devotees everywhere, whether they can visit in person or only through a screen.
+                Every astrologer on our platform is vetted for credentials and lineage before being marked
+                &ldquo;Ayodhya Verified.&rdquo;
+              </p>
+              <ul>
+                <li>Free, instant kundali generation from real birth-chart data</li>
+                <li>Live consultations with verified Ayodhya pandits, by chat or call</li>
+                <li>Pujas performed in real Ayodhya temples, streamed live, prasad couriered to you</li>
+                <li>AI-assisted guidance available 24×7, grounded in your actual chart</li>
+              </ul>
+            </div>
+
+            <div className="card about-card">
+              <h3>Get in Touch</h3>
+              <div className="contact-row">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z" /><path d="m4 6 8 7 8-7" /></svg>
+                <a href="mailto:support@awadhastro.com">support@awadhastro.com</a>
+              </div>
+              <div className="contact-row">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2Z" /></svg>
+                <a href="tel:+911234567890">+91 12345 67890</a>
+              </div>
+              <div className="contact-row">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                <span>Ram Path, Ayodhya, Uttar Pradesh 224123</span>
+              </div>
+              <div className="contact-row">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                <span>Support available 7:00 AM – 11:00 PM IST, every day</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

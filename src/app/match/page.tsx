@@ -19,6 +19,8 @@ function PersonFields({
 }) {
   const set = <K extends keyof MatchPerson>(k: K, v: MatchPerson[K]) => onChange({ ...value, [k]: v });
   const id = role.toLowerCase();
+  const [fileName, setFileName] = useState<string | null>(null);
+
   return (
     <div className="card" style={{ display: "grid", gap: 14 }}>
       <div className="mp-role">
@@ -39,6 +41,28 @@ function PersonFields({
       <div className="field">
         <label htmlFor={`${id}-p`}>Place of Birth</label>
         <input id={`${id}-p`} required value={value.placeOfBirth} placeholder="e.g. Lucknow" onChange={(e) => set("placeOfBirth", e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor={`${id}-f`}>Have an existing Kundali? <span className="opt">(optional, image or PDF)</span></label>
+        {!fileName ? (
+          <label className="upload-drop" htmlFor={`${id}-f`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
+            <span>Upload to share with your astrologer</span>
+          </label>
+        ) : (
+          <div className="upload-chip">
+            <span>📄 {fileName}</span>
+            <button type="button" onClick={() => setFileName(null)} aria-label="Remove file">✕</button>
+          </div>
+        )}
+        <input
+          id={`${id}-f`} type="file" accept="image/*,.pdf" style={{ display: "none" }}
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+        />
+        <p className="opt" style={{ marginTop: 4 }}>
+          We can&apos;t auto-read birth details from an uploaded chart yet — please still fill the fields
+          above so we can compute the match instantly. An astrologer will cross-check the upload.
+        </p>
       </div>
     </div>
   );
@@ -67,6 +91,38 @@ export default function MatchPage() {
         Ashtakoot Guna Milan — the 36-point Vedic compatibility system used for marriage.{" "}
         <span className="hi">गुण मिलान</span>
       </p>
+
+      {!result && (
+        <details className="guide-card">
+          <summary>Why does Kundali Matching matter? <span className="opt">— tap to read the guide</span></summary>
+          <div className="guide-body">
+            <p>
+              Ashtakoot Guna Milan compares the bride&apos;s and groom&apos;s Moon-sign placements across
+              8 factors (&ldquo;kootas&rdquo;), each worth a fixed number of points, for 36 total. It is one
+              of the oldest and most widely used Vedic tools for judging marital compatibility.
+            </p>
+            <ul>
+              <li><b>Varna &amp; Vashya</b> — spiritual temperament and mutual influence.</li>
+              <li><b>Tara</b> — health and general fortune as a couple.</li>
+              <li><b>Yoni</b> — physical and intimate compatibility.</li>
+              <li><b>Graha Maitri</b> — mental and intellectual bonding.</li>
+              <li><b>Gana</b> — temperament match (calm, active or fierce natures).</li>
+              <li><b>Bhakoot</b> — love, finances and family welfare.</li>
+              <li><b>Nadi</b> — genetic health of future children; the single most heavily weighted koota.</li>
+            </ul>
+            <p>
+              <b>How to read your score:</b> 18+/36 is generally considered acceptable, 25+ very good, and
+              32+ excellent. A low score on any single koota — especially Nadi — is traditionally taken more
+              seriously than the overall percentage, and is usually where astrologers suggest a remedy
+              (puja) rather than treating the match as incompatible outright.
+            </p>
+            <p className="opt">
+              This is one input among many for a marriage decision, not a verdict — always pair a report
+              like this with a conversation with a real astrologer for context.
+            </p>
+          </div>
+        </details>
+      )}
 
       {!result && (
         <form onSubmit={onSubmit}>

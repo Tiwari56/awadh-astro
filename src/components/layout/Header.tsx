@@ -3,39 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-
-const navItems = [
-  { label: "Puja / Seva", href: "/seva" },
-  {
-    label: "Consultations",
-    href: "/astrologers",
-    dropdown: [
-      { label: "Chat with Astrologer", href: "/astrologers" },
-      { label: "Call an Astrologer", href: "/astrologers" },
-      { label: "AI Astro Chat", href: "/chat" },
-    ],
-  },
-  {
-    label: "Free Services",
-    href: "/kundali",
-    dropdown: [
-      { label: "Free Kundali", href: "/kundali" },
-      { label: "Kundali Matching", href: "/match" },
-      { label: "AI Chat", href: "/chat" },
-    ],
-  },
-  {
-    label: "Horoscope",
-    href: "/kundali",
-    dropdown: [
-      { label: "Daily Horoscope", href: "/kundali" },
-      { label: "Weekly Horoscope", href: "/kundali" },
-      { label: "Monthly Horoscope", href: "/kundali" },
-      { label: "Yearly Horoscope", href: "/kundali" },
-    ],
-  },
-  { label: "Awadh Plus", href: "/plus" },
-];
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const tickerItems = [
   "🎉 First consultation FREE — Use code AWADH1ST",
@@ -48,15 +18,44 @@ const tickerItems = [
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const navItems = [
+    { label: t.nav.seva, href: "/seva" },
+    {
+      label: t.nav.consultations,
+      href: "/astrologers",
+      dropdown: [
+        { label: t.nav.chatWithAstrologer, href: "/astrologers" },
+        { label: t.nav.callAstrologer, href: "/astrologers" },
+        { label: t.nav.aiChat, href: "/chat" },
+      ],
+    },
+    {
+      label: t.nav.freeServices,
+      href: "/kundali",
+      dropdown: [
+        { label: t.nav.freeKundali, href: "/kundali" },
+        { label: t.nav.kundaliMatching, href: "/match" },
+        { label: t.nav.aiChat, href: "/chat" },
+      ],
+    },
+    {
+      label: t.nav.horoscope,
+      href: "/kundali",
+      dropdown: [{ label: t.nav.dailyHoroscope, href: "/kundali" }],
+    },
+    { label: t.nav.plus, href: "/plus" },
+  ];
 
   return (
     <>
       {/* Ticker */}
       <div className="promo-ticker" aria-label="Promotions">
         <div className="ticker-track">
-          {[...tickerItems, ...tickerItems].map((t, i) => (
+          {[...tickerItems, ...tickerItems].map((tItem, i) => (
             <div key={i} className="ticker-item">
-              {t}
+              {tItem}
               <span>·</span>
             </div>
           ))}
@@ -87,7 +86,7 @@ export default function Header() {
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                   </svg>
-                  Ayodhya, U.P.
+                  {t.common.ayodhya}
                 </div>
               </div>
             </Link>
@@ -123,11 +122,13 @@ export default function Header() {
 
           {/* Desktop right */}
           <div className="header-cta">
+            <LanguageSwitcher />
+            <ThemeToggle />
             <div className="header-balance">
               ₹&nbsp;250
             </div>
             <Link href="/astrologers" className="btn btn-primary btn-sm">
-              Chat Now
+              {t.nav.chatNow}
             </Link>
           </div>
         </div>
@@ -144,8 +145,12 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 16 }}>
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
             <Link href="/astrologers" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
-              Chat with Astrologer
+              {t.nav.chatWithAstrologer}
             </Link>
           </div>
         )}
