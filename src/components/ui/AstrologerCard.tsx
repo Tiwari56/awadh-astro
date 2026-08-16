@@ -1,3 +1,7 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { Astrologer } from "@/types";
 
 const statusLabel: Record<Astrologer["status"], string> = {
@@ -8,6 +12,19 @@ const statusLabel: Record<Astrologer["status"], string> = {
 
 export default function AstrologerCard({ astrologer }: { astrologer: Astrologer }) {
   const a = astrologer;
+  const router = useRouter();
+  const { status } = useSession();
+
+  function onChatNow() {
+    if (status !== "authenticated") {
+      router.push("/login?callbackUrl=/astrologers");
+      return;
+    }
+    // Real per-astrologer live chat/call is a later sprint — route to the
+    // working free AI chat for now rather than dead-ending the click.
+    router.push("/chat");
+  }
+
   return (
     <div className="card astro-card">
       <div className="astro-top">
@@ -28,6 +45,14 @@ export default function AstrologerCard({ astrologer }: { astrologer: Astrologer 
         ))}
       </div>
 
+      <div className="astro-tags">
+        {a.consultModes.includes("online") && <span className="tag tag-mode">💻 Online</span>}
+        {a.consultModes.includes("in-person") && <span className="tag tag-mode">🛕 In-Person</span>}
+      </div>
+      {a.officeLocation && a.consultModes.includes("in-person") && (
+        <div className="astro-meta">📍 {a.officeLocation}</div>
+      )}
+
       <div className="astro-meta">
         {a.experienceYears} yrs experience · {a.languages.join(", ")}
       </div>
@@ -36,7 +61,7 @@ export default function AstrologerCard({ astrologer }: { astrologer: Astrologer 
         <span className="rate">
           ₹{a.ratePerMin}<small>/min</small>
         </span>
-        <button className="btn btn-primary btn-sm" disabled={a.status !== "online"}>
+        <button className="btn btn-primary btn-sm" disabled={a.status !== "online"} onClick={onChatNow}>
           {a.status === "online" ? "Chat Now" : statusLabel[a.status]}
         </button>
       </div>

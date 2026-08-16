@@ -6,6 +6,15 @@ export interface BirthDetails {
   timeOfBirth: string; // HH:mm
   placeOfBirth: string;
   gender: "male" | "female" | "other";
+  /**
+   * True when the user doesn't know their exact birth time. We fall back to
+   * 12:00 noon (a standard astrological convention for unknown-time charts)
+   * and the UI must disclose that Ascendant/houses are then approximate —
+   * Moon/Sun sign and nakshatra are still accurate since those don't shift
+   * within a single day. No astrology API we use has a dedicated
+   * "time unknown" parameter, so this is handled entirely on our side.
+   */
+  timeUnknown?: boolean;
 }
 
 export interface PlanetPosition {
@@ -75,6 +84,9 @@ export interface KundaliResult {
 
 export type AstrologerStatus = "online" | "busy" | "offline";
 
+/** How a devotee can consult this astrologer — distinct from live presence (`status`). */
+export type ConsultMode = "online" | "in-person";
+
 export interface Astrologer {
   id: string;
   name: string;
@@ -87,6 +99,16 @@ export interface Astrologer {
   totalConsults: number;
   status: AstrologerStatus;
   ayodhyaVerified: boolean;
+  consultModes: ConsultMode[]; // e.g. ["online"] or ["online", "in-person"]
+  officeLocation?: string; // set when "in-person" is offered
+}
+
+/** A structured "subscribe to see the benefit" card, rendered in place of a plain text bubble. */
+export interface ChatUpsellPayload {
+  headline: string;
+  benefits: string[];
+  ctaLabel: string;
+  ctaHref: string;
 }
 
 export interface ChatMessage {
@@ -94,6 +116,8 @@ export interface ChatMessage {
   role: "user" | "ai";
   text: string;
   timestamp: number;
+  kind?: "text" | "upsell"; // default "text" when absent
+  upsell?: ChatUpsellPayload;
 }
 
 export interface PlusPlan {

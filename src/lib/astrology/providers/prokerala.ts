@@ -3,102 +3,38 @@ import type {
   DoshaSummary,
   KundaliResult,
   PlanetPosition,
+  Yoga,
 } from "@/types";
-import { astrologyConfig } from "../config";
+import { coordsParam, prokeralaGet, prokeralaGetSafe } from "./prokerala-client";
 import type { AstrologyProvider, BirthContext } from "../provider";
 
 /**
  * Prokerala v2 provider (Swiss-Ephemeris backed).
- * Docs: https://api.prokerala.com/docs
  *
- * Auth is OAuth2 client-credentials; tokens are cached in-process until shortly
- * before expiry. A full enriched kundali pulls several endpoints:
- *   - /v2/astrology/planet-position  → ascendant + planet table (sign/house/deg/nakshatra)
- *   - /v2/astrology/birth-details    → moon/sun rasi, nakshatra, lucky attributes
- *   - /v2/astrology/dasha-periods    → mahadasha + running antardasha
- *   - /v2/astrology/panchang         → tithi/vara/yoga/karana (birth almanac)
- *   - /v2/astrology/mangal-dosha     → Manglik status
- *   - /v2/astrology/kaal-sarp-dosha  → Kaal Sarp status
+ * Endpoints below were verified against Prokerala's published OpenAPI spec
+ * (https://api.prokerala.com/spec/astrology.v2.yaml) and their own demo/docs
+ * site in Aug 2026 — NOT guessed from memory. Two corrections vs. an earlier
+ * draft of this file: there is no standalone `/dasha-periods` endpoint (dasha
+ * lives inside `/kundli/advanced`), and the "lucky attributes" field names on
+ * `/birth-details` are `birth_stone` / `color` / `direction`, not
+ * `lucky_gem` / `lucky_colour` / `favorable_direction`.
  *
- * The core three endpoints are required; the enrichment endpoints are fetched
- * "safely" (null on failure) so a missing entitlement/shape drift degrades
- * gracefully instead of breaking the free kundali.
+ * One endpoint could not be confirmed from the spec text despite being a real,
+ * documented Prokerala feature (their own demo lists it under "Horoscope
+ * Calculators"): `/astrology/planet-position`, used below for the planet
+ * table and for the live Saturn transit (Sade Sati). Its exact JSON field
+ * names are our best-effort mapping — verify against a live response at
+ * https://api.prokerala.com/docs the first time real credentials are wired,
+ * and adjust the `PlanetEntry` interface below if field names differ.
  *
- * IMPORTANT: exact field names below follow Prokerala's documented v2 shapes but
- * MUST be verified against live responses on first integration — mapping is
- * defensive (optional chaining + fallbacks). Positions come from the ephemeris;
- * no LLM is involved here.
+ * RULE: no LLM is involved anywhere in this file. Positions come from the
+ * ephemeris; narrative interpretation happens later, in the chat layer.
  */
-
-interface CachedToken {
-  accessToken: string;
-  expiresAt: number; // epoch ms
-}
-
-let tokenCache: CachedToken | null = null;
-
-async function getAccessToken(): Promise<string> {
-  const now = Date.now();
-  if (tokenCache && tokenCache.expiresAt > now + 60_000) {
-    return tokenCache.accessToken;
-  }
-
-  const { clientId, clientSecret, baseUrl } = astrologyConfig.prokerala;
-  const res = await fetch(`${baseUrl}/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: clientId!,
-      client_secret: clientSecret!,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Prokerala auth failed: ${res.status} ${await res.text()}`);
-  }
-
-  const json = (await res.json()) as { access_token: string; expires_in: number };
-  tokenCache = {
-    accessToken: json.access_token,
-    expiresAt: now + json.expires_in * 1000,
-  };
-  return json.access_token;
-}
-
-async function prokeralaGet<T>(path: string, ctx: BirthContext): Promise<T> {
-  const token = await getAccessToken();
-  const { baseUrl } = astrologyConfig.prokerala;
-  const params = new URLSearchParams({
-    ayanamsa: String(astrologyConfig.ayanamsa),
-    coordinates: `${ctx.location.latitude},${ctx.location.longitude}`,
-    datetime: ctx.datetime,
-  });
-
-  const res = await fetch(`${baseUrl}${path}?${params}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-  });
-  if (!res.ok) {
-    throw new Error(`Prokerala ${path} failed: ${res.status} ${await res.text()}`);
-  }
-  const json = (await res.json()) as { data?: T };
-  if (!json.data) throw new Error(`Prokerala ${path} returned no data`);
-  return json.data;
-}
-
-/** Enrichment fetch that never throws — returns null so the chart still renders. */
-async function prokeralaGetSafe<T>(path: string, ctx: BirthContext): Promise<T | null> {
-  try {
-    return await prokeralaGet<T>(path, ctx);
-  } catch {
-    return null;
-  }
-}
 
 // --- Response shapes (subset we consume) --------------------------------------
 
 interface Rasi { id?: number; name?: string; }
-interface NakshatraInfo { name?: string; pada?: number; }
+interface NakshatraInfo { id?: number; name?: string; lord?: { name?: string }; pada?: number; }
 
 interface PlanetEntry {
   name?: string;
@@ -107,23 +43,23 @@ interface PlanetEntry {
   degree?: number;
   rasi?: Rasi;
   nakshatra?: NakshatraInfo;
-  basic_avastha?: string; // some plans expose dignity/avastha here
-  dignity?: string;
+  avastha?: string; // dignity — unconfirmed field name, see file header
 }
 interface PlanetPositionData { planet_position?: PlanetEntry[]; }
 
-interface BirthDetailsData {
-  nakshatra?: NakshatraInfo;
-  chandra_rasi?: Rasi;
-  soorya_rasi?: Rasi;
-  additional_info?: {
-    lucky_gem?: string;
-    lucky_number?: number | string;
-    lucky_colour?: string;
-    lucky_color?: string;
-    favroute_direction?: string;
-    favorable_direction?: string;
-  };
+interface AdditionalInfo {
+  deity?: string; ganam?: string; symbol?: string; animal_sign?: string; nadi?: string;
+  color?: string; direction?: string; syllables?: string; birth_stone?: string;
+  gender?: string; planet?: string; enemy_yoni?: string;
+}
+
+interface MangalDoshaBlock {
+  has_dosha?: boolean;
+  has_exception?: boolean;
+  type?: string;
+  exceptions?: string[];
+  remedies?: string[];
+  description?: string;
 }
 
 interface RawDasha {
@@ -133,25 +69,33 @@ interface RawDasha {
   planet?: { name?: string };
   antardasha?: RawDasha[];
 }
-interface DashaData { dasha_periods?: RawDasha[]; }
 
+interface YogaListItem { name?: string; has_yoga?: boolean; description?: string; }
+interface YogaCategory { name?: string; yoga_list?: YogaListItem[]; }
+
+/** `/v2/astrology/kundli/advanced` — the one big call covering birth details, mangal dosha, yogas, and dasha. */
+interface KundliAdvancedData {
+  nakshatra?: NakshatraInfo;
+  chandra_rasi?: Rasi;
+  soorya_rasi?: Rasi;
+  additional_info?: AdditionalInfo;
+  mangal_dosha?: MangalDoshaBlock;
+  yoga_details?: YogaCategory[];
+  dasha_periods?: RawDasha[];
+}
+
+interface PanchangEntry { name?: string; paksha?: string; }
 interface PanchangData {
-  tithi?: { name?: string; paksha?: string };
   vaara?: string;
-  nakshatra?: { name?: string };
-  yoga?: { name?: string };
-  karana?: { name?: string };
+  tithi?: PanchangEntry[];
+  nakshatra?: PanchangEntry[];
+  karana?: PanchangEntry[];
+  yoga?: PanchangEntry[];
 }
 
-interface DoshaData {
-  has_dosha?: boolean;
-  description?: string;
-  // mangal dosha specific
-  has_mangal_dosha?: boolean;
-  mangal_dosha?: { has_dosha?: boolean; description?: string };
-}
+interface KaalSarpData { has_dosha?: boolean; type?: string; dosha_type?: string; description?: string; }
 
-// --- Sign formatting ----------------------------------------------------------
+// --- Formatting helpers ---------------------------------------------------------
 
 const SIGN_BY_ID: Record<number, string> = {
   1: "Mesha (Aries)", 2: "Vrishabha (Taurus)", 3: "Mithuna (Gemini)",
@@ -165,13 +109,28 @@ function formatRasi(rasi?: Rasi): string {
   return rasi?.name ?? "—";
 }
 
-function toDoshaSummary(data: DoshaData | null, absentMsg: string): DoshaSummary {
-  const present = Boolean(data?.has_dosha ?? data?.has_mangal_dosha ?? data?.mangal_dosha?.has_dosha);
-  const description = data?.description ?? data?.mangal_dosha?.description;
+/**
+ * Numerology "Life Path Number" from the date of birth (digit-sum, reduced to
+ * 1–9). This is a DIFFERENT system from Vedic astrology (Chaldean/Pythagorean
+ * numerology) — Prokerala's astrology API has no "lucky number" field because
+ * that concept isn't part of Jyotish, so we compute it ourselves rather than
+ * inventing a fake API field.
+ */
+function lifePathNumber(dateOfBirth: string): number {
+  let n = dateOfBirth.replace(/\D/g, "").split("").reduce((s, d) => s + Number(d), 0);
+  while (n > 9) n = String(n).split("").reduce((s, d) => s + Number(d), 0);
+  return n || 1;
+}
+
+function requestParams(ctx: BirthContext): Record<string, string> {
   return {
-    present,
-    severity: present ? "Moderate" : "None",
-    summary: description ?? (present ? "Dosha present in the chart." : absentMsg),
+    coordinates: coordsParam(ctx.location.latitude, ctx.location.longitude),
+    datetime: ctx.datetime,
+    // Prokerala accepts a `language` param on every endpoint (credits cost
+    // more for non-English per their pricing page). "hi" is the standard
+    // ISO 639-1 code — worth a quick live-response check the first time
+    // real credentials are used, in case Prokerala expects a different code.
+    language: ctx.locale === "hi" ? "hi" : "en",
   };
 }
 
@@ -180,23 +139,29 @@ function toDoshaSummary(data: DoshaData | null, absentMsg: string): DoshaSummary
 export const prokeralaProvider: AstrologyProvider = {
   name: "prokerala",
   async computeKundali(ctx: BirthContext): Promise<KundaliResult> {
-    // Required core data.
-    const [positions, birth, dasha] = await Promise.all([
-      prokeralaGet<PlanetPositionData>("/v2/astrology/planet-position", ctx),
-      prokeralaGet<BirthDetailsData>("/v2/astrology/birth-details", ctx),
-      prokeralaGet<DashaData>("/v2/astrology/dasha-periods", ctx),
-    ]);
-    // Optional enrichment (never breaks the chart).
-    const [panchang, mangal, kaalSarp] = await Promise.all([
-      prokeralaGetSafe<PanchangData>("/v2/astrology/panchang", ctx),
-      prokeralaGetSafe<DoshaData>("/v2/astrology/mangal-dosha", ctx),
-      prokeralaGetSafe<DoshaData>("/v2/astrology/kaal-sarp-dosha", ctx),
+    const params = requestParams(ctx);
+
+    // Required core data — one call covers birth details, mangal dosha, yogas, dasha.
+    const kundli = await prokeralaGet<KundliAdvancedData>("/v2/astrology/kundli/advanced", params);
+
+    // Enrichment — never breaks the chart if any of these fail or the plan lacks them.
+    const [panchang, kaalSarp, planetPos, currentSaturn] = await Promise.all([
+      prokeralaGetSafe<PanchangData>("/v2/astrology/panchang", params),
+      prokeralaGetSafe<KaalSarpData>("/v2/astrology/kaal-sarp-dosha", params),
+      prokeralaGetSafe<PlanetPositionData>("/v2/astrology/planet-position", params),
+      // Live Saturn transit (today, not birth date) — used to compute real Sade Sati below.
+      prokeralaGetSafe<PlanetPositionData>("/v2/astrology/planet-position", {
+        coordinates: params.coordinates,
+        datetime: new Date().toISOString().replace("Z", "+00:00"),
+      }),
     ]);
 
-    const entries = positions.planet_position ?? [];
-    const ascendantEntry = entries.find((e) => e.name?.toLowerCase() === "ascendant");
-
-    const planets: PlanetPosition[] = entries
+    const planetEntries = planetPos?.planet_position ?? [];
+    // NOTE: assumes the ascendant is returned as a planet_position entry named
+    // "Ascendant" — the common pattern for this class of API, unconfirmed for
+    // Prokerala specifically (see file header). Falls back to "—" if absent.
+    const ascendantEntry = planetEntries.find((e) => e.name?.toLowerCase() === "ascendant");
+    const planets: PlanetPosition[] = planetEntries
       .filter((e) => e.name && e.name.toLowerCase() !== "ascendant")
       .map((e) => ({
         planet: e.name!,
@@ -206,17 +171,17 @@ export const prokeralaProvider: AstrologyProvider = {
         retrograde: Boolean(e.is_retrograde),
         nakshatra: e.nakshatra?.name ?? "—",
         pada: e.nakshatra?.pada ?? 0,
-        dignity: e.dignity ?? e.basic_avastha ?? "—",
+        dignity: e.avastha ?? "—",
       }));
 
-    const { mahadasha, antardasha } = extractDasha(dasha);
-    const info = birth.additional_info;
+    const { mahadasha, antardasha } = extractDasha(kundli.dasha_periods ?? []);
+    const info = kundli.additional_info;
 
     return {
       ascendant: formatRasi(ascendantEntry?.rasi),
-      moonSign: formatRasi(birth.chandra_rasi),
-      sunSign: formatRasi(birth.soorya_rasi),
-      nakshatra: birth.nakshatra?.name ?? "—",
+      moonSign: formatRasi(kundli.chandra_rasi),
+      sunSign: formatRasi(kundli.soorya_rasi),
+      nakshatra: kundli.nakshatra?.name ?? "—",
       currentDasha: `${mahadasha.planet} Mahadasha`,
       planets,
       // Narrative interpretation is the chat LLM's job (seam #2), not here.
@@ -224,40 +189,97 @@ export const prokeralaProvider: AstrologyProvider = {
         "Your chart has been computed from your exact birth details. Ask an astrologer or the AI guide to interpret what it means for you today.",
 
       panchang: {
-        tithi: panchang?.tithi?.name ?? "—",
+        // Panchang elements can change mid-day; Prokerala returns them as
+        // arrays. We take the element active at query time (first entry) —
+        // fine for a birth-panchang display since we query with the exact
+        // birth datetime.
+        tithi: panchang?.tithi?.[0]?.name ?? "—",
         vara: panchang?.vaara ?? "—",
-        nakshatra: panchang?.nakshatra?.name ?? birth.nakshatra?.name ?? "—",
-        yoga: panchang?.yoga?.name ?? "—",
-        karana: panchang?.karana?.name ?? "—",
-        moonPhase: panchang?.tithi?.paksha ?? "—",
+        nakshatra: panchang?.nakshatra?.[0]?.name ?? kundli.nakshatra?.name ?? "—",
+        yoga: panchang?.yoga?.[0]?.name ?? "—",
+        karana: panchang?.karana?.[0]?.name ?? "—",
+        moonPhase: panchang?.tithi?.[0]?.paksha ?? "—",
       },
       mahadasha,
       antardasha,
-      mangalDosha: toDoshaSummary(mangal, "No Mangal Dosha detected."),
-      // Prokerala does not expose a single "sade sati" boolean on the base plan;
-      // verify the correct endpoint for your tier and wire it here. Neutral default:
-      sadeSati: { present: false, severity: "None", summary: "Sade Sati status not available on the current plan." },
-      kaalSarpDosha: toDoshaSummary(kaalSarp, "No Kaal Sarp Dosha detected."),
-      // Yoga detection needs the yoga-details endpoint (higher tier) — left empty
-      // until wired; UI hides the section when there are none.
-      yogas: [],
-      luckyGem: info?.lucky_gem ?? "—",
-      luckyNumber: Number(info?.lucky_number) || 0,
-      luckyColor: info?.lucky_colour ?? info?.lucky_color ?? "—",
-      favorableDirection: info?.favroute_direction ?? info?.favorable_direction ?? "—",
+      mangalDosha: formatMangalDosha(kundli.mangal_dosha),
+      sadeSati: computeSadeSati(kundli.chandra_rasi?.id, currentSaturn?.planet_position),
+      kaalSarpDosha: formatKaalSarp(kaalSarp),
+      yogas: extractYogas(kundli.yoga_details),
+      luckyGem: info?.birth_stone ?? "—",
+      luckyNumber: lifePathNumber(ctx.details.dateOfBirth),
+      luckyColor: info?.color ?? "—",
+      favorableDirection: info?.direction ?? "—",
     };
   },
 };
 
+function formatMangalDosha(m?: MangalDoshaBlock): DoshaSummary {
+  const present = Boolean(m?.has_dosha);
+  const parts = [m?.description];
+  if (present && m?.has_exception) parts.push(`Exception applies: ${(m.exceptions ?? []).join("; ") || m.type}.`);
+  if (present && m?.remedies?.length) parts.push(`Suggested remedy: ${m.remedies[0]}.`);
+  return {
+    present,
+    severity: present ? (m?.has_exception ? "Low" : "Moderate") : "None",
+    summary: parts.filter(Boolean).join(" ") || (present ? "Mangal Dosha present in the chart." : "No Mangal Dosha detected. Mars is not in a Manglik position."),
+  };
+}
+
+function formatKaalSarp(k: KaalSarpData | null): DoshaSummary {
+  const present = Boolean(k?.has_dosha);
+  return {
+    present,
+    severity: present ? "Low" : "None",
+    summary: k?.description ?? (present ? `${k?.dosha_type ?? "Kaal Sarp"} Yoga present.` : "No Kaal Sarp Dosha detected."),
+  };
+}
+
+/**
+ * Real Sade Sati computation: Saturn's CURRENT transiting sign compared to the
+ * NATAL Moon's sign. Classically active when Saturn transits the 12th, 1st
+ * (peak/"Madhya"), or 2nd sign counted from natal Moon.
+ */
+function computeSadeSati(moonRasiId: number | undefined, saturnNow?: PlanetEntry[]): DoshaSummary {
+  const saturn = saturnNow?.find((e) => e.name?.toLowerCase() === "saturn");
+  const saturnRasiId = saturn?.rasi?.id;
+  if (!moonRasiId || !saturnRasiId) {
+    return { present: false, severity: "None", summary: "Sade Sati status could not be computed (transit data unavailable)." };
+  }
+  const houseFromMoon = ((saturnRasiId - moonRasiId + 12) % 12) + 1; // 1..12, Moon's own sign = 1
+  const active = houseFromMoon === 12 || houseFromMoon === 1 || houseFromMoon === 2;
+  if (!active) {
+    return { present: false, severity: "None", summary: "You are not currently in Sade Sati. Saturn is not transiting near your Moon sign." };
+  }
+  const phase = houseFromMoon === 12 ? "rising (first) phase" : houseFromMoon === 1 ? "peak (second) phase — traditionally the most intense" : "setting (third) phase";
+  return {
+    present: true,
+    severity: houseFromMoon === 1 ? "High" : "Moderate",
+    summary: `Saturn is currently transiting the ${phase} of Sade Sati relative to your natal Moon. A period for patience, discipline and remedies.`,
+  };
+}
+
+function extractYogas(categories?: YogaCategory[]): Yoga[] {
+  const out: Yoga[] = [];
+  for (const cat of categories ?? []) {
+    for (const item of cat.yoga_list ?? []) {
+      if (item.has_yoga && item.name) {
+        // Prokerala doesn't rank yoga strength; "Moderate" is our own display default.
+        out.push({ name: item.name, effect: item.description ?? cat.name ?? "", strength: "Moderate" });
+      }
+    }
+  }
+  return out;
+}
+
 /** Extract the running mahadasha and its active antardasha from the timeline. */
-function extractDasha(dasha: DashaData): { mahadasha: DashaPeriodType; antardasha: DashaPeriodType } {
+function extractDasha(periods: RawDasha[]): { mahadasha: DashaPeriodType; antardasha: DashaPeriodType } {
   const now = Date.now();
   const within = (p: RawDasha) => {
     const s = p.start ? Date.parse(p.start) : NaN;
     const e = p.end ? Date.parse(p.end) : NaN;
     return !Number.isNaN(s) && !Number.isNaN(e) && now >= s && now <= e;
   };
-  const periods = dasha.dasha_periods ?? [];
   const maha = periods.find(within) ?? periods[0];
   const antar = maha?.antardasha?.find(within) ?? maha?.antardasha?.[0];
 

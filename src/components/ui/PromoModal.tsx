@@ -2,42 +2,51 @@
 
 import { useEffect, useState } from "react";
 
+const SESSION_KEY = "awadh-promo-shown";
+const MIN_DWELL_MS = 6000; // don't interrupt someone who just landed
+const SCROLL_TRIGGER_PX = 900; // only once they've actually engaged with the page
+
+/**
+ * Shows the first-consultation promo at most ONCE per browser session, and
+ * not before the visitor has spent a few seconds on the page AND scrolled a
+ * meaningful distance — earlier this fired almost immediately at 400px of
+ * scroll and then kept re-showing every 10s, which read as spammy.
+ */
 export default function PromoModal() {
   const [showPromoModal, setShowPromoModal] = useState(false);
-  const [promoShownCount, setPromoShownCount] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 400) {
-        setPromoShownCount((prev) => {
-          if (prev === 0) {
-            setShowPromoModal(true);
-            return 1;
-          }
-          return prev;
-        });
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    if (sessionStorage.getItem(SESSION_KEY)) return;
 
-  useEffect(() => {
-    if (!showPromoModal && promoShownCount > 0 && promoShownCount < 3) {
-      const timer = setTimeout(() => {
-        setShowPromoModal(true);
-        setPromoShownCount((prev) => prev + 1);
-      }, 10000);
-      return () => clearTimeout(timer);
+    const loadedAt = Date.now();
+    let dwellOk = false;
+    const dwellTimer = setTimeout(() => { dwellOk = true; }, MIN_DWELL_MS);
+
+    function reveal() {
+      if (sessionStorage.getItem(SESSION_KEY)) return;
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setShowPromoModal(true);
+      window.removeEventListener("scroll", handleScroll);
     }
-  }, [showPromoModal, promoShownCount]);
+
+    function handleScroll() {
+      if (window.scrollY < SCROLL_TRIGGER_PX) return;
+      if (dwellOk || Date.now() - loadedAt > MIN_DWELL_MS) reveal();
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      clearTimeout(dwellTimer);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   if (!showPromoModal) return null;
 
   return (
     <div className="promo-modal-overlay" onClick={() => setShowPromoModal(false)}>
       <div className="promo-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="promo-modal-close" onClick={() => setShowPromoModal(false)}>✕</button>
+        <button className="promo-modal-close" onClick={() => setShowPromoModal(false)} aria-label="Close">✕</button>
         <div className="promo-modal-image">
           <img src="/images/promo.jpg" alt="Get first consultation free" />
         </div>

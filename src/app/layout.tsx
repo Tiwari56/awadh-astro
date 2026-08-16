@@ -4,6 +4,12 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BottomNav from "@/components/layout/BottomNav";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import SessionProvider from "@/components/providers/SessionProvider";
+
+// Sets html[data-theme] before paint so there's no flash of the wrong theme.
+// Mirrors applyTheme() in ThemeToggle.tsx — keep the two in sync.
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('awadh-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
 
 // Display serif for headings & logo — temple-inscription feel, quietly premium.
 const display = Marcellus({
@@ -28,22 +34,33 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Awadh Astro", statusBarStyle: "black-translucent" },
 };
 
-// Mobile-first viewport. Dark "Temple Gold" chrome so the app feels native.
+// Mobile-first viewport. "Temple Gold" chrome, dark by default with a light
+// mode available (toggle in header) — browser chrome follows the same choice.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1b0f0a",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fff8ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#1b0f0a" },
+  ],
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
-        <Header />
-        <main>{children}</main>
-        <Footer />
-        <BottomNav />
+        <SessionProvider>
+          <LanguageProvider>
+            <Header />
+            <main>{children}</main>
+            <Footer />
+            <BottomNav />
+          </LanguageProvider>
+        </SessionProvider>
       </body>
     </html>
   );

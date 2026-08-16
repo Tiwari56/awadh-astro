@@ -96,3 +96,36 @@ export const PUJA_OFFERINGS: PujaOffering[] = [
 export function getPuja(id: string): PujaOffering | undefined {
   return PUJA_OFFERINGS.find((p) => p.id === id);
 }
+
+/** Optional add-ons a devotee can attach to any puja booking, priced live in the cart. */
+export interface PujaAddon {
+  id: string;
+  label: string;
+  description: string;
+  priceINR: number;
+  requiresServiceableCity?: boolean; // physical delivery/attendance, not just courier
+}
+
+export const PUJA_ADDONS: PujaAddon[] = [
+  { id: "extra-prasad", label: "Extra Prasad Box", description: "A second prasad box shipped to another address", priceINR: 350 },
+  { id: "bhandara", label: "Bhandara / Prasad Donation", description: "Sponsor a meal distribution at an NGO or old-age home in your family's name", priceINR: 501, requiresServiceableCity: true },
+  { id: "hd-recording", label: "HD Recording + Photo Album", description: "Professionally edited video and photo album, delivered digitally", priceINR: 299 },
+  { id: "extra-sankalp", label: "Add a Second Sankalp", description: "Include another family member's name & gotra in the same ritual", priceINR: 199 },
+];
+
+/**
+ * Cities where in-person bhandara/NGO delivery is currently serviceable.
+ * PRODUCTION: replace with a real pincode-lookup service; prasad courier
+ * itself ships everywhere (see PujaOffering.internationalShipping) — this
+ * list only gates the *in-person* bhandara/old-age-home add-on.
+ */
+export const SERVICEABLE_CITIES = [
+  "Ayodhya", "Lucknow", "Delhi", "Mumbai", "Bengaluru", "Kolkata",
+  "Hyderabad", "Pune", "Chennai", "Ahmedabad", "Varanasi", "Prayagraj",
+];
+
+export function isCityServiceable(city: string): boolean {
+  const q = city.trim().toLowerCase();
+  if (!q) return false;
+  return SERVICEABLE_CITIES.some((c) => q.includes(c.toLowerCase()));
+}

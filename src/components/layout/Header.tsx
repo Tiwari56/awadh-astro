@@ -2,61 +2,68 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const navItems = [
-  { label: "Puja / Seva", href: "/seva" },
-  {
-    label: "Consultations",
-    href: "/astrologers",
-    dropdown: [
-      { label: "Chat with Astrologer", href: "/astrologers" },
-      { label: "Call an Astrologer", href: "/astrologers" },
-      { label: "AI Astro Chat", href: "/chat" },
-    ],
-  },
-  {
-    label: "Free Services",
-    href: "/kundali",
-    dropdown: [
-      { label: "Free Kundali", href: "/kundali" },
-      { label: "Kundali Matching", href: "/match" },
-      { label: "AI Chat", href: "/chat" },
-    ],
-  },
-  {
-    label: "Horoscope",
-    href: "/kundali",
-    dropdown: [
-      { label: "Daily Horoscope", href: "/kundali" },
-      { label: "Weekly Horoscope", href: "/kundali" },
-      { label: "Monthly Horoscope", href: "/kundali" },
-      { label: "Yearly Horoscope", href: "/kundali" },
-    ],
-  },
-  { label: "Awadh Plus", href: "/plus" },
-];
-
-const tickerItems = [
-  "🎉 First consultation FREE — Use code AWADH1ST",
-  "✨ 48,726+ Verified Ayodhya Pandits",
-  "🔱 Live Pujas from Hanuman Garhi & Ram Ki Paidi",
-  "⭐ Rated 4.8/5 by 9.5 Crore users",
-  "🪔 Prasad delivered to your door",
+const tickerItems: { text: string; href?: string }[] = [
+  { text: "🎉 First consultation FREE — Use code AWADH1ST", href: "/astrologers" },
+  { text: "✨ 48,726+ Verified Ayodhya Pandits" },
+  { text: "🔱 Live Pujas from Hanuman Garhi & Ram Ki Paidi" },
+  { text: "⭐ Rated 4.8/5 by 9.5 Crore users" },
+  { text: "🪔 Prasad delivered to your door" },
 ];
 
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
+  const { data: session } = useSession();
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!session?.user) { setBalance(null); return; }
+    fetch("/api/wallet").then((r) => r.json()).then((d) => setBalance(d.balanceINR ?? 0)).catch(() => setBalance(null));
+  }, [session?.user]);
+
+  const navItems = [
+    { label: t.nav.seva, href: "/seva" },
+    {
+      label: t.nav.consultations,
+      href: "/astrologers",
+      dropdown: [
+        { label: t.nav.chatWithAstrologer, href: "/astrologers" },
+        { label: t.nav.callAstrologer, href: "/astrologers" },
+        { label: t.nav.aiChat, href: "/chat" },
+      ],
+    },
+    {
+      label: t.nav.freeServices,
+      href: "/kundali",
+      dropdown: [
+        { label: t.nav.freeKundali, href: "/kundali" },
+        { label: t.nav.kundaliMatching, href: "/match" },
+        { label: t.nav.aiChat, href: "/chat" },
+      ],
+    },
+    {
+      label: t.nav.horoscope,
+      href: "/kundali",
+      dropdown: [{ label: t.nav.dailyHoroscope, href: "/kundali" }],
+    },
+    { label: t.nav.plus, href: "/plus" },
+  ];
 
   return (
     <>
       {/* Ticker */}
       <div className="promo-ticker" aria-label="Promotions">
         <div className="ticker-track">
-          {[...tickerItems, ...tickerItems].map((t, i) => (
+          {[...tickerItems, ...tickerItems].map((tItem, i) => (
             <div key={i} className="ticker-item">
-              {t}
+              {tItem.href ? <Link href={tItem.href} className="ticker-link">{tItem.text}</Link> : tItem.text}
               <span>·</span>
             </div>
           ))}
@@ -87,7 +94,7 @@ export default function Header() {
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                   </svg>
-                  Ayodhya, U.P.
+                  {t.common.ayodhya}
                 </div>
               </div>
             </Link>
@@ -123,12 +130,18 @@ export default function Header() {
 
           {/* Desktop right */}
           <div className="header-cta">
-            <div className="header-balance">
-              ₹&nbsp;250
-            </div>
-            <Link href="/astrologers" className="btn btn-primary btn-sm">
-              Chat Now
-            </Link>
+            <LanguageSwitcher />
+            <ThemeToggle />
+            {session?.user ? (
+              <>
+                {balance !== null && <div className="header-balance">₹&nbsp;{balance.toLocaleString("en-IN")}</div>}
+                <Link href="/account" className="header-avatar" aria-label="My Account">
+                  {(session.user.name || session.user.phone || "U").replace(/^\+?91/, "")[0].toUpperCase()}
+                </Link>
+              </>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm">Sign In</Link>
+            )}
           </div>
         </div>
 
@@ -144,9 +157,19 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link href="/astrologers" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
-              Chat with Astrologer
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 16 }}>
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
+            {session?.user ? (
+              <Link href="/account" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
+                My Account {balance !== null && `· ₹${balance.toLocaleString("en-IN")}`}
+              </Link>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
+                Sign In
+              </Link>
+            )}
           </div>
         )}
       </header>
