@@ -81,15 +81,28 @@ export default function AccountPage() {
     }
   }
 
+  // Session cookie is valid but the account it points at no longer exists in
+  // the database (e.g. dev DB was reset). Middleware trusts the session's
+  // cached `onboarded` claim and would otherwise bounce /login straight back
+  // to "/" without ever showing the form — signing out for real here clears
+  // that stale cookie so /login actually works on the next visit.
+  const sessionIsStale = status === "authenticated" && !loading && summary !== null && !summary.user;
+  useEffect(() => {
+    if (sessionIsStale) signOut({ callbackUrl: "/login" });
+  }, [sessionIsStale]);
+
   if (status === "loading" || loading) {
     return <div className="container section"><p>Loading your account…</p></div>;
   }
-  if (status !== "authenticated" || !summary?.user) {
+  if (status !== "authenticated") {
     return (
       <div className="container section">
         <p>Please <Link href="/login">sign in</Link> to view your account.</p>
       </div>
     );
+  }
+  if (!summary || !summary.user) {
+    return <div className="container section"><p>Your session has expired. Signing you out…</p></div>;
   }
 
   const { user } = summary;

@@ -19,13 +19,16 @@ import type { AstrologyProvider, BirthContext } from "../provider";
  * `/birth-details` are `birth_stone` / `color` / `direction`, not
  * `lucky_gem` / `lucky_colour` / `favorable_direction`.
  *
- * One endpoint could not be confirmed from the spec text despite being a real,
- * documented Prokerala feature (their own demo lists it under "Horoscope
- * Calculators"): `/astrology/planet-position`, used below for the planet
- * table and for the live Saturn transit (Sade Sati). Its exact JSON field
- * names are our best-effort mapping — verify against a live response at
- * https://api.prokerala.com/docs the first time real credentials are wired,
- * and adjust the `PlanetEntry` interface below if field names differ.
+ * Verified against a real live response (Aug 2026, production credentials,
+ * not sandbox): `/kundli/advanced` nests nakshatra/chandra_rasi/soorya_rasi/
+ * additional_info under a `nakshatra_details` wrapper (an earlier draft of
+ * this file assumed they were top-level — fixed). `additional_info`'s
+ * direction field is `best_direction`, not `direction`. `/planet-position`
+ * returns `id/name/longitude/is_retrograde/position/degree/rasi` per planet
+ * INCLUDING an "Ascendant" entry — but genuinely never returns a per-planet
+ * `nakshatra` or `avastha` (dignity) field at this endpoint/plan tier, so
+ * those two columns in the planet table correctly show "—" rather than
+ * guessed/wrong data.
  *
  * RULE: no LLM is involved anywhere in this file. Positions come from the
  * ephemeris; narrative interpretation happens later, in the chat layer.
@@ -42,14 +45,18 @@ interface PlanetEntry {
   position?: number; // house number 1..12
   degree?: number;
   rasi?: Rasi;
+  // nakshatra/avastha are NOT present on real /planet-position responses
+  // (confirmed live) — kept optional so planets[].nakshatra/dignity fall
+  // back to "—" honestly rather than guessing, in case a future Prokerala
+  // plan/endpoint adds them.
   nakshatra?: NakshatraInfo;
-  avastha?: string; // dignity — unconfirmed field name, see file header
+  avastha?: string;
 }
 interface PlanetPositionData { planet_position?: PlanetEntry[]; }
 
 interface AdditionalInfo {
   deity?: string; ganam?: string; symbol?: string; animal_sign?: string; nadi?: string;
-  color?: string; direction?: string; syllables?: string; birth_stone?: string;
+  color?: string; best_direction?: string; syllables?: string; birth_stone?: string;
   gender?: string; planet?: string; enemy_yoni?: string;
 }
 
@@ -73,12 +80,22 @@ interface RawDasha {
 interface YogaListItem { name?: string; has_yoga?: boolean; description?: string; }
 interface YogaCategory { name?: string; yoga_list?: YogaListItem[]; }
 
-/** `/v2/astrology/kundli/advanced` — the one big call covering birth details, mangal dosha, yogas, and dasha. */
-interface KundliAdvancedData {
+interface NakshatraDetails {
   nakshatra?: NakshatraInfo;
   chandra_rasi?: Rasi;
   soorya_rasi?: Rasi;
   additional_info?: AdditionalInfo;
+}
+
+/**
+ * `/v2/astrology/kundli/advanced` — the one big call covering birth details,
+ * mangal dosha, yogas, and dasha. Confirmed against a live response (Aug
+ * 2026, real credentials): nakshatra/chandra_rasi/soorya_rasi/additional_info
+ * are nested under `nakshatra_details`, not top-level as an earlier draft of
+ * this file assumed.
+ */
+interface KundliAdvancedData {
+  nakshatra_details?: NakshatraDetails;
   mangal_dosha?: MangalDoshaBlock;
   yoga_details?: YogaCategory[];
   dasha_periods?: RawDasha[];
@@ -175,13 +192,14 @@ export const prokeralaProvider: AstrologyProvider = {
       }));
 
     const { mahadasha, antardasha } = extractDasha(kundli.dasha_periods ?? []);
-    const info = kundli.additional_info;
+    const nakDetails = kundli.nakshatra_details;
+    const info = nakDetails?.additional_info;
 
     return {
       ascendant: formatRasi(ascendantEntry?.rasi),
-      moonSign: formatRasi(kundli.chandra_rasi),
-      sunSign: formatRasi(kundli.soorya_rasi),
-      nakshatra: kundli.nakshatra?.name ?? "—",
+      moonSign: formatRasi(nakDetails?.chandra_rasi),
+      sunSign: formatRasi(nakDetails?.soorya_rasi),
+      nakshatra: nakDetails?.nakshatra?.name ?? "—",
       currentDasha: `${mahadasha.planet} Mahadasha`,
       planets,
       // Narrative interpretation is the chat LLM's job (seam #2), not here.
@@ -195,7 +213,7 @@ export const prokeralaProvider: AstrologyProvider = {
         // birth datetime.
         tithi: panchang?.tithi?.[0]?.name ?? "—",
         vara: panchang?.vaara ?? "—",
-        nakshatra: panchang?.nakshatra?.[0]?.name ?? kundli.nakshatra?.name ?? "—",
+        nakshatra: panchang?.nakshatra?.[0]?.name ?? nakDetails?.nakshatra?.name ?? "—",
         yoga: panchang?.yoga?.[0]?.name ?? "—",
         karana: panchang?.karana?.[0]?.name ?? "—",
         moonPhase: panchang?.tithi?.[0]?.paksha ?? "—",
@@ -203,13 +221,13 @@ export const prokeralaProvider: AstrologyProvider = {
       mahadasha,
       antardasha,
       mangalDosha: formatMangalDosha(kundli.mangal_dosha),
-      sadeSati: computeSadeSati(kundli.chandra_rasi?.id, currentSaturn?.planet_position),
+      sadeSati: computeSadeSati(nakDetails?.chandra_rasi?.id, currentSaturn?.planet_position),
       kaalSarpDosha: formatKaalSarp(kaalSarp),
       yogas: extractYogas(kundli.yoga_details),
       luckyGem: info?.birth_stone ?? "—",
       luckyNumber: lifePathNumber(ctx.details.dateOfBirth),
       luckyColor: info?.color ?? "—",
-      favorableDirection: info?.direction ?? "—",
+      favorableDirection: info?.best_direction ?? "—",
     };
   },
 };
