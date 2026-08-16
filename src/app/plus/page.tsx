@@ -1,13 +1,17 @@
+"use client";
+
 import { PLUS_PLANS } from "@/lib/data/plans";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function PlusPage() {
+  const { t } = useLanguage();
+  const p = t.plus;
   return (
     <div className="container section">
-      <h2 style={{ textAlign: "center", marginBottom: 24 }}>Awadh Plus</h2>
+      <h2 style={{ textAlign: "center", marginBottom: 24 }}>{p.pageTitle}</h2>
       <p style={{ margin: "0 auto 40px", color: "var(--ink-soft)", maxWidth: 640, textAlign: "center", lineHeight: 1.6 }}>
-        Your kundali, working for you every day. Plus members receive proactive notifications —
-        auspicious muhurat for purchases and new ventures, caution days to avoid, and monthly
-        personalized reports.
+        {p.subtitle} Plus members receive proactive notifications — auspicious muhurat for
+        purchases and new ventures, caution days to avoid, and monthly personalized reports.
       </p>
 
       <div className="plus-plans">
@@ -24,15 +28,15 @@ export default function PlusPage() {
                 <li key={f}>{f}</li>
               ))}
             </ul>
-            <button className={`btn ${plan.highlighted ? "btn-primary" : "btn-primary"}`} style={{ width: "100%", marginTop: "auto" }}>
-              {plan.pricePerYear === 0 ? "Current Plan" : "Subscribe — ₹999/yr"}
+            <button className="btn btn-primary" style={{ width: "100%", marginTop: "auto" }}>
+              {plan.pricePerYear === 0 ? p.currentPlan : `${p.subscribe} — ₹999/yr`}
             </button>
           </div>
         ))}
       </div>
 
       <p style={{ marginTop: 40, fontSize: "0.85rem", color: "var(--muted)", textAlign: "center" }}>
-        Payments will be processed via Razorpay (UPI, cards, net banking). Cancel anytime.
+        {p.paymentNote}
       </p>
     </div>
   );

@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import PromoModal from "@/components/ui/PromoModal";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-/* ── Static data ──────────────────────────────── */
+/* ── Static content datasets ──────────────────────
+   These are illustrative marketing/demo content (astrologer bios, testimonials,
+   horoscope copy). Translating this large a volume of prose per-locale is a
+   content job, not a UI job — left English-only for this pass; the natural
+   home for it is the admin panel mentioned for the next iteration. Everything
+   structural around it (headings, labels, buttons) IS translated below. */
 const zodiacSigns = [
   { name: "Aries",       hindi: "मेष",      icon: "♈", dates: "Mar 21 – Apr 19", lucky: "Red", num: 9 },
   { name: "Taurus",      hindi: "वृष",      icon: "♉", dates: "Apr 20 – May 20", lucky: "Green", num: 6 },
@@ -45,14 +51,14 @@ const astrologers = [
 ];
 
 const services = [
-  { icon: "🪔", title: "Free Kundali",      desc: "Detailed birth chart in seconds",       href: "/kundali",      bg: "#fef8e8" },
-  { icon: "💑", title: "Kundali Matching",  desc: "Marriage compatibility report",          href: "/match",        bg: "#fce8f0" },
-  { icon: "✨", title: "AI Astro Chat",     desc: "24×7 AI-powered guidance",              href: "/chat",         bg: "#e8f0fe" },
-  { icon: "🔱", title: "Online Puja",       desc: "Live rituals from Ayodhya temples",     href: "/seva",         bg: "#fde8d8" },
-  { icon: "🔔", title: "Daily Horoscope",   desc: "Personalized daily predictions",         href: "/kundali",      bg: "#e8fef0" },
-  { icon: "📿", title: "Awadh Plus",        desc: "Muhurat alerts & premium access",        href: "/plus",         bg: "#f5e8ff" },
-  { icon: "🧿", title: "Tarot Reading",     desc: "Unlock hidden truths with Tarot",       href: "/chat",         bg: "#e8f8ff" },
-  { icon: "🏠", title: "Vastu Shastra",     desc: "Harmonize your home & workspace",       href: "/astrologers",  bg: "#fff8e8" },
+  { icon: "🪔", title: "Free Kundali",      desc: "Detailed birth chart in seconds",       href: "/kundali" },
+  { icon: "💑", title: "Kundali Matching",  desc: "Marriage compatibility report",          href: "/match" },
+  { icon: "✨", title: "AI Astro Chat",     desc: "24×7 AI-powered guidance",              href: "/chat" },
+  { icon: "🔱", title: "Online Puja",       desc: "Live rituals from Ayodhya temples",     href: "/seva" },
+  { icon: "🔔", title: "Daily Horoscope",   desc: "Personalized daily predictions",         href: "/kundali" },
+  { icon: "📿", title: "Awadh Plus",        desc: "Muhurat alerts & premium access",        href: "/plus" },
+  { icon: "🧿", title: "Tarot Reading",     desc: "Unlock hidden truths with Tarot",       href: "/chat" },
+  { icon: "🏠", title: "Vastu Shastra",     desc: "Harmonize your home & workspace",       href: "/astrologers" },
 ];
 
 const pujas = [
@@ -73,6 +79,8 @@ const testimonials = [
 ];
 
 export default function HomePage() {
+  const { t } = useLanguage();
+  const h = t.home;
   const [activeZodiac, setActiveZodiac] = useState(4); // Leo default
   const [counters, setCounters] = useState({ a: 0, u: 0, c: 0, l: 0 });
   const [stars, setStars] = useState<{ id: number; top: number; left: number; size: number; delay: number; dur: number; op: number }[]>([]);
@@ -114,22 +122,14 @@ export default function HomePage() {
     <div className="landing">
       {/* ── HERO ─────────────────────────────────── */}
       <section className="hero">
-        {/* Background layers */}
         <div className="hero-sunburst" aria-hidden="true" />
-        
-        {/* Revolving Planets */}
+
         <div className="hero-orbits" aria-hidden="true">
-          <div className="orbit-ring orbit-ring-1">
-             <div className="planet planet-1" />
-          </div>
-          <div className="orbit-ring orbit-ring-2">
-             <div className="planet planet-2" />
-          </div>
-          <div className="orbit-ring orbit-ring-3">
-             <div className="planet planet-3" />
-          </div>
+          <div className="orbit-ring orbit-ring-1"><div className="planet planet-1" /></div>
+          <div className="orbit-ring orbit-ring-2"><div className="planet planet-2" /></div>
+          <div className="orbit-ring orbit-ring-3"><div className="planet planet-3" /></div>
         </div>
-        
+
         <div className="stars-container" aria-hidden="true">
           {stars.map((s) => (
             <div
@@ -146,35 +146,30 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Content */}
         <div className="hero-content-wrap" style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 2 }}>
           <div className="hero-eyebrow" role="status">
             <span className="live-dot" aria-hidden="true" />
-            Ayodhya-Verified Astrologers · Online Now
+            {h.heroEyebrow}
           </div>
-          <p className="hero-hindi">श्री राम की नगरी से — ज्योतिष की सेवा</p>
+          <p className="hero-hindi">{h.heroHindiLine}</p>
           <h1>
-            <span className="grad-text-light">Sacred Wisdom</span> from the<br />
-            Land of Shri Ram
+            <span className="grad-text-light">{h.heroTitleLine1}</span> {h.heroTitleLine2}
           </h1>
-          <p className="hero-tagline">
-            India's most trusted Ayodhya astrology platform — free kundali, live consultations
-            with verified pandits, AI guidance, and auspicious-day alerts.
-          </p>
+          <p className="hero-tagline">{h.heroTagline}</p>
           <div className="hero-actions">
             <Link href="/kundali" className="btn btn-primary" style={{ fontSize: "1rem" }}>
-              🪔 Get My Free Kundali
+              🪔 {h.ctaFreeKundali}
             </Link>
             <Link href="/astrologers" className="btn btn-outline">
-              💬 Chat with Astrologer
+              💬 {h.ctaChatAstrologer}
             </Link>
           </div>
           <div className="hero-stats">
             {[
-              { v: "48,726+", l: "Astrologers" },
-              { v: "9.5Cr+",  l: "Happy Users" },
-              { v: "5Cr+",    l: "Consultations" },
-              { v: "4.8 ★",   l: "App Rating" },
+              { v: "48,726+", l: h.statAstrologers },
+              { v: "9.5Cr+",  l: h.statUsers },
+              { v: "5Cr+",    l: h.statConsultations },
+              { v: "4.8 ★",   l: h.statRating },
             ].map((s) => (
               <div key={s.l} className="hero-stat-item">
                 <div className="hero-stat-num">{s.v}</div>
@@ -188,15 +183,15 @@ export default function HomePage() {
       {/* ── TRUST STRIP ──────────────────────────── */}
       <div className="trust-strip">
         {[
-          { icon: "✓", label: "Ayodhya-verified pandits" },
-          { icon: "📹", label: "Watch rituals live" },
-          { icon: "📦", label: "Prasad to your door" },
-          { icon: "🔒", label: "100% secure payments" },
-          { icon: "🌐", label: "4 languages" },
-        ].map((t) => (
-          <div key={t.label} className="trust-item">
-            <span className="trust-item-icon">{t.icon}</span>
-            <span>{t.label}</span>
+          { icon: "✓", label: h.trustVerified },
+          { icon: "📹", label: h.trustLive },
+          { icon: "📦", label: h.trustPrasad },
+          { icon: "🔒", label: h.trustSecure },
+          { icon: "🌐", label: h.trustLanguages },
+        ].map((ti) => (
+          <div key={ti.label} className="trust-item">
+            <span className="trust-item-icon">{ti.icon}</span>
+            <span>{ti.label}</span>
           </div>
         ))}
       </div>
@@ -204,21 +199,21 @@ export default function HomePage() {
       {/* ── ZODIAC / HOROSCOPE ────────────────────── */}
       <section className="zodiac-section">
         <div className="container">
-          <span className="section-eyebrow section-eyebrow-light">Daily Horoscope</span>
-          <h2 className="section-title" style={{ marginBottom: "6px" }}>What do the stars say today?</h2>
-          <p className="section-sub" style={{ marginBottom: "28px" }}>Click your sign to see your personalized reading.</p>
+          <span className="section-eyebrow section-eyebrow-light">{h.zodiacEyebrow}</span>
+          <h2 className="section-title" style={{ marginBottom: "6px" }}>{h.zodiacTitle}</h2>
+          <p className="section-sub" style={{ marginBottom: "28px" }}>{h.zodiacSub}</p>
 
           <div className="zodiac-scroll">
-            {zodiacSigns.map((z, i) => (
+            {zodiacSigns.map((zs, i) => (
               <button
-                key={z.name}
+                key={zs.name}
                 className={`zodiac-card${activeZodiac === i ? " active" : ""}`}
                 onClick={() => setActiveZodiac(i)}
-                aria-label={`${z.name} horoscope`}
+                aria-label={`${zs.name} horoscope`}
               >
-                <div className="zodiac-icon">{z.icon}</div>
-                <div className="zodiac-name">{z.name}</div>
-                <div className="zodiac-dates">{z.dates}</div>
+                <div className="zodiac-icon">{zs.icon}</div>
+                <div className="zodiac-name">{zs.name}</div>
+                <div className="zodiac-dates">{zs.dates}</div>
               </button>
             ))}
           </div>
@@ -230,12 +225,12 @@ export default function HomePage() {
               <div className="horoscope-hindi">{z.hindi}</div>
               <p className="horoscope-text">{horoscopeTexts[activeZodiac]}</p>
               <div className="horoscope-lucky">
-                <div className="lucky-item">🎨 Lucky Color: {z.lucky}</div>
-                <div className="lucky-item">🔢 Lucky Number: {z.num}</div>
-                <div className="lucky-item">⭐ Energy: High</div>
+                <div className="lucky-item">🎨 {h.luckyColor}: {z.lucky}</div>
+                <div className="lucky-item">🔢 {h.luckyNumber}: {z.num}</div>
+                <div className="lucky-item">⭐ {h.energy}: High</div>
               </div>
               <Link href="/kundali" style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--gold)", fontSize: "0.82rem", fontWeight: 700 }}>
-                Read full horoscope →
+                {h.readFull} →
               </Link>
             </div>
           </div>
@@ -247,10 +242,10 @@ export default function HomePage() {
         <div className="container">
           <div className="stats-grid">
             {[
-              { n: fmt(counters.a), l: "Verified Astrologers" },
-              { n: fmt(counters.u), l: "Happy Users" },
-              { n: fmt(counters.c), l: "Consultations Done" },
-              { n: `${counters.l}+`, l: "Languages Supported" },
+              { n: fmt(counters.a), l: h.statAstrologersLabel },
+              { n: fmt(counters.u), l: h.statUsersLabel },
+              { n: fmt(counters.c), l: h.statConsultationsLabel },
+              { n: `${counters.l}+`, l: h.statLanguagesLabel },
             ].map((s) => (
               <div key={s.l} className="stat-item">
                 <span className="stat-number">{s.n}</span>
@@ -267,15 +262,15 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
             <div>
               <span className="section-eyebrow">
-                <span style={{ color: "var(--green)" }}>● </span>Live Now
+                <span style={{ color: "var(--green)" }}>● </span>{h.astroEyebrow}
               </span>
-              <h2 className="section-title" style={{ marginBottom: 0 }}>Talk to Astrologers</h2>
+              <h2 className="section-title" style={{ marginBottom: 0 }}>{h.astroTitle}</h2>
             </div>
             <Link href="/astrologers" style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--saffron)" }}>
-              View all →
+              {h.viewAll} →
             </Link>
           </div>
-          <p className="section-sub">Verified Ayodhya pandits available right now. First minute free for new users.</p>
+          <p className="section-sub">{h.astroSub}</p>
 
           <div className="astro-grid">
             {astrologers.map((a) => (
@@ -306,10 +301,10 @@ export default function HomePage() {
 
                 <div className="astro-actions">
                   <button className="btn btn-chat btn-sm" style={{ flex: 1 }} disabled={a.status !== "online"}>
-                    💬 Chat
+                    💬 {h.chatBtn}
                   </button>
                   <button className="btn btn-call btn-sm" style={{ flex: 1 }} disabled={a.status !== "online"}>
-                    📞 Call
+                    📞 {h.callBtn}
                   </button>
                 </div>
 
@@ -328,7 +323,7 @@ export default function HomePage() {
 
           <div style={{ textAlign: "center", marginTop: "32px" }}>
             <Link href="/astrologers" className="btn btn-outline" style={{ display: "inline-flex" }}>
-              See all {48726}+ Astrologers
+              {h.seeAllAstrologers}
             </Link>
           </div>
         </div>
@@ -337,9 +332,9 @@ export default function HomePage() {
       {/* ── SERVICES ─────────────────────────────── */}
       <section className="services-section">
         <div className="container">
-          <span className="section-eyebrow" style={{ color: "var(--saffron-dark)" }}>Free & Premium</span>
-          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>Everything on One Platform</h2>
-          <p className="section-sub section-sub-dark">Astrology, rituals, AI, and divine guidance — all in one sacred place.</p>
+          <span className="section-eyebrow" style={{ color: "var(--saffron-dark)" }}>{h.servicesEyebrow}</span>
+          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>{h.servicesTitle}</h2>
+          <p className="section-sub section-sub-dark">{h.servicesSub}</p>
           <div className="services-grid">
             {services.map((s) => (
               <Link key={s.title} href={s.href} className="service-card">
@@ -357,11 +352,9 @@ export default function HomePage() {
       {/* ── PUJA ─────────────────────────────────── */}
       <section className="puja-section">
         <div className="container">
-          <span className="section-eyebrow" style={{ color: "var(--terracotta)" }}>Live from Ayodhya</span>
-          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>🔱 Online Pujas</h2>
-          <p className="section-sub section-sub-dark">
-            A verified pandit performs your ritual live in a real Ayodhya temple. You watch on video. Prasad reaches home.
-          </p>
+          <span className="section-eyebrow" style={{ color: "var(--terracotta)" }}>{h.pujaEyebrow}</span>
+          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>{h.pujaTitle}</h2>
+          <p className="section-sub section-sub-dark">{h.pujaSub}</p>
           <div className="puja-grid">
             {pujas.map((p) => (
               <div key={p.id} className="puja-card">
@@ -376,10 +369,10 @@ export default function HomePage() {
                     <span>⌂</span> {p.temple} · {p.duration}
                   </div>
                   <div className="puja-footer">
-                    <div className="puja-price">{p.price} <small>onwards</small></div>
-                    <button className="btn btn-sm" style={{ background: "var(--terracotta)", color: "#fff", borderRadius: "999px" }}>
-                      Book Now
-                    </button>
+                    <div className="puja-price">{p.price} <small>{h.onwards}</small></div>
+                    <Link href="/seva" className="btn btn-sm" style={{ background: "var(--terracotta)", color: "#fff", borderRadius: "999px" }}>
+                      {h.bookNow}
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -391,19 +384,14 @@ export default function HomePage() {
       {/* ── ABOUT / CONTACT ──────────────────────── */}
       <section className="about-section" id="about">
         <div className="container">
-          <span className="section-eyebrow" style={{ color: "var(--saffron-dark)" }}>Who We Are</span>
-          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>About Awadh Astro</h2>
-          <p className="section-sub section-sub-dark">Rooted in Ayodhya, built for anyone seeking clarity from Vedic wisdom.</p>
+          <span className="section-eyebrow" style={{ color: "var(--saffron-dark)" }}>{h.aboutEyebrow}</span>
+          <h2 className="section-title section-title-dark" style={{ marginBottom: "6px" }}>{h.aboutTitle}</h2>
+          <p className="section-sub section-sub-dark">{h.aboutSub}</p>
 
           <div className="about-grid">
             <div className="card about-card">
-              <h3>Our Story</h3>
-              <p style={{ marginBottom: 14 }}>
-                Awadh Astro was founded in Ayodhya — the land of Shri Ram — to bring authentic, temple-verified
-                Vedic guidance to devotees everywhere, whether they can visit in person or only through a screen.
-                Every astrologer on our platform is vetted for credentials and lineage before being marked
-                &ldquo;Ayodhya Verified.&rdquo;
-              </p>
+              <h3>{h.ourStory}</h3>
+              <p style={{ marginBottom: 14 }}>{h.storyText}</p>
               <ul>
                 <li>Free, instant kundali generation from real birth-chart data</li>
                 <li>Live consultations with verified Ayodhya pandits, by chat or call</li>
@@ -413,7 +401,7 @@ export default function HomePage() {
             </div>
 
             <div className="card about-card">
-              <h3>Get in Touch</h3>
+              <h3>{h.contactTitle}</h3>
               <div className="contact-row">
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z" /><path d="m4 6 8 7 8-7" /></svg>
                 <a href="mailto:support@awadhastro.com">support@awadhastro.com</a>
@@ -428,7 +416,7 @@ export default function HomePage() {
               </div>
               <div className="contact-row">
                 <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-                <span>Support available 7:00 AM – 11:00 PM IST, every day</span>
+                <span>{h.supportHours}</span>
               </div>
             </div>
           </div>
@@ -438,21 +426,21 @@ export default function HomePage() {
       {/* ── TESTIMONIALS ─────────────────────────── */}
       <section className="testimonials-section">
         <div className="container" style={{ marginBottom: "36px" }}>
-          <span className="section-eyebrow section-eyebrow-light">User Reviews</span>
-          <h2 className="section-title" style={{ marginBottom: "6px" }}>Trusted by Millions</h2>
-          <p className="section-sub">Real people, real transformations — guided by Ayodhya's sacred wisdom.</p>
+          <span className="section-eyebrow section-eyebrow-light">{h.testimonialsEyebrow}</span>
+          <h2 className="section-title" style={{ marginBottom: "6px" }}>{h.testimonialsTitle}</h2>
+          <p className="section-sub">{h.testimonialsSub}</p>
         </div>
         <div style={{ overflow: "hidden" }}>
           <div className="testimonials-track">
-            {[...testimonials, ...testimonials].map((t, i) => (
+            {[...testimonials, ...testimonials].map((tm, i) => (
               <div key={i} className="testimonial-card">
-                <div className="testimonial-stars">{"★".repeat(t.rating)}</div>
-                <p className="testimonial-text">"{t.text}"</p>
+                <div className="testimonial-stars">{"★".repeat(tm.rating)}</div>
+                <p className="testimonial-text">&quot;{tm.text}&quot;</p>
                 <div className="testimonial-author">
-                  <div className="testimonial-avatar">{t.name[0]}</div>
+                  <div className="testimonial-avatar">{tm.name[0]}</div>
                   <div>
-                    <div className="testimonial-name">{t.name}</div>
-                    <div className="testimonial-city">{t.city}</div>
+                    <div className="testimonial-name">{tm.name}</div>
+                    <div className="testimonial-city">{tm.city}</div>
                   </div>
                 </div>
               </div>
@@ -464,35 +452,15 @@ export default function HomePage() {
       {/* ── APP DOWNLOAD ─────────────────────────── */}
       <section className="app-section">
         <div className="bottom-orbits" aria-hidden="true">
-          <div className="orbit-ring orbit-ring-4">
-             <div className="planet planet-4">
-               <img src="/planets/gold.jpg" alt="Gold Planet" />
-             </div>
-          </div>
-          <div className="orbit-ring orbit-ring-5">
-             <div className="planet planet-5">
-               <img src="/planets/purple.jpg" alt="Purple Planet" />
-             </div>
-          </div>
-          <div className="orbit-ring orbit-ring-6">
-             <div className="planet planet-6">
-               <img src="/planets/ice.jpg" alt="Ice Planet" />
-             </div>
-          </div>
-          <div className="orbit-ring orbit-ring-7">
-             <div className="planet planet-7">
-               <img src="/planets/yellow_white.jpg" alt="Yellow White Planet" />
-             </div>
-          </div>
+          <div className="orbit-ring orbit-ring-4"><div className="planet planet-4"><img src="/planets/gold.jpg" alt="Gold Planet" /></div></div>
+          <div className="orbit-ring orbit-ring-5"><div className="planet planet-5"><img src="/planets/purple.jpg" alt="Purple Planet" /></div></div>
+          <div className="orbit-ring orbit-ring-6"><div className="planet planet-6"><img src="/planets/ice.jpg" alt="Ice Planet" /></div></div>
+          <div className="orbit-ring orbit-ring-7"><div className="planet planet-7"><img src="/planets/yellow_white.jpg" alt="Yellow White Planet" /></div></div>
         </div>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
-          <span className="section-eyebrow section-eyebrow-light">Download the App</span>
-          <h2 className="section-title" style={{ marginBottom: "12px" }}>
-            Take Ayodhya's Wisdom Everywhere
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.95rem", maxWidth: 500, margin: "0 auto" }}>
-            Free consultations, live pujas, and daily guidance at your fingertips. 10 million+ downloads.
-          </p>
+          <span className="section-eyebrow section-eyebrow-light">{h.appEyebrow}</span>
+          <h2 className="section-title" style={{ marginBottom: "12px" }}>{h.appTitle}</h2>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.95rem", maxWidth: 500, margin: "0 auto" }}>{h.appSub}</p>
           <div className="app-badges">
             <a href="#" className="app-badge">
               <span className="app-badge-icon">🍎</span>

@@ -2,14 +2,8 @@
 
 import { useEffect, useRef, useState, FormEvent } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { ChatMessage, ChatUpsellPayload } from "@/types";
-
-const WELCOME: ChatMessage = {
-  id: "welcome",
-  role: "ai",
-  text: "Namaste 🙏 I am your Awadh Astro AI guide. Ask me anything about your kundali, an upcoming decision, or today's panchang.",
-  timestamp: Date.now(),
-};
 
 const HOROSCOPE_TIMES = ["6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "8:00 PM", "9:00 PM"];
 
@@ -51,7 +45,11 @@ function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
+  const { t } = useLanguage();
+  const c = t.chat;
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: "welcome", role: "ai", text: c.welcome, timestamp: Date.now() },
+  ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -99,7 +97,7 @@ export default function ChatPage() {
 
   return (
     <div className="container section" style={{ maxWidth: 720 }}>
-      <h2>AI Astro Chat</h2>
+      <h2>{t.nav.aiChat}</h2>
       <div className="chat-box">
         <div className="chat-messages">
           {messages.map((m) =>
@@ -114,23 +112,21 @@ export default function ChatPage() {
               </div>
             )
           )}
-          {sending && <div className="msg msg-ai">Consulting the stars…</div>}
+          {sending && <div className="msg msg-ai">{c.consulting}</div>}
           <div ref={bottomRef} />
         </div>
         <form className="chat-input-row" onSubmit={onSend}>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your kundali, career, marriage…"
+            placeholder={c.placeholder}
             aria-label="Chat message"
           />
           <button className="btn btn-primary" style={{ padding: "0 24px", minHeight: "auto" }} type="submit" disabled={sending || !input.trim()}>
-            Send
+            {c.send}
           </button>
         </form>
-        <p className="ai-disclaimer">
-          You are chatting with an AI. Guidance is spiritual/informational only.
-        </p>
+        <p className="ai-disclaimer">{c.disclaimer}</p>
       </div>
     </div>
   );

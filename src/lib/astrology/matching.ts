@@ -93,10 +93,10 @@ function recommendationFor(percent: number, kootas: Koota[]): string {
 
 // --- Public entry point ---------------------------------------------------------
 
-export async function matchKundali(bride: MatchPerson, groom: MatchPerson): Promise<MatchResult> {
+export async function matchKundali(bride: MatchPerson, groom: MatchPerson, locale = "en"): Promise<MatchResult> {
   if (!isProkeralaConfigured()) return mockMatchKundali(bride, groom);
   try {
-    return await prokeralaMatchKundali(bride, groom);
+    return await prokeralaMatchKundali(bride, groom, locale);
   } catch (err) {
     console.error("[matching] Prokerala provider failed, falling back to mock:", err);
     return mockMatchKundali(bride, groom);
@@ -128,7 +128,7 @@ function matchKootaKey(name: string): string | null {
   return null;
 }
 
-async function prokeralaMatchKundali(bride: MatchPerson, groom: MatchPerson): Promise<MatchResult> {
+async function prokeralaMatchKundali(bride: MatchPerson, groom: MatchPerson, locale: string): Promise<MatchResult> {
   const [girl, boy] = await Promise.all([
     resolveBirthLocation(bride.placeOfBirth, bride.dateOfBirth, bride.timeOfBirth, bride.timeUnknown),
     resolveBirthLocation(groom.placeOfBirth, groom.dateOfBirth, groom.timeOfBirth, groom.timeUnknown),
@@ -139,7 +139,7 @@ async function prokeralaMatchKundali(bride: MatchPerson, groom: MatchPerson): Pr
     girl_dob: girl.datetime,
     boy_coordinates: coordsParam(boy.location.latitude, boy.location.longitude),
     boy_dob: boy.datetime,
-    language: "en",
+    language: locale === "hi" ? "hi" : "en",
   });
 
   const gunaByKey = new Map<string, GunaEntry>();

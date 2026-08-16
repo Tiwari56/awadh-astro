@@ -11,6 +11,15 @@ export interface BirthContext {
   location: GeoLocation;
   /** e.g. "1994-03-21T04:35:00+05:30" */
   datetime: string;
+  /**
+   * UI locale ("en" | "hi" | "bn" | "mr"). Prokerala's endpoints accept a
+   * `language` param — real providers should pass this through so
+   * descriptive text (dosha/yoga descriptions etc.) comes back native.
+   * Defaults to "en" when absent. The mock provider ignores this; Hindi
+   * display for the mock's output is instead handled by the presentation
+   * layer's vedic-terms.ts lookup.
+   */
+  locale?: string;
 }
 
 /**

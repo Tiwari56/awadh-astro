@@ -15,7 +15,7 @@ import { prokeralaProvider } from "./providers/prokerala";
  *
  * Never computes planetary positions with an LLM.
  */
-export async function computeKundali(details: BirthDetails): Promise<KundaliResult> {
+export async function computeKundali(details: BirthDetails, locale = "en"): Promise<KundaliResult> {
   const { location, datetime, geocoded } = await resolveBirthLocation(
     details.placeOfBirth,
     details.dateOfBirth,
@@ -27,7 +27,7 @@ export async function computeKundali(details: BirthDetails): Promise<KundaliResu
   // configured, degrade to the mock so the free-kundali hook never 500s.
   const useProkerala = isProkeralaConfigured() && geocoded;
   const provider: AstrologyProvider = useProkerala ? prokeralaProvider : mockProvider;
-  const ctx: BirthContext = { details, location, datetime };
+  const ctx: BirthContext = { details, location, datetime, locale };
 
   try {
     return await provider.computeKundali(ctx);

@@ -123,7 +123,15 @@ function lifePathNumber(dateOfBirth: string): number {
 }
 
 function requestParams(ctx: BirthContext): Record<string, string> {
-  return { coordinates: coordsParam(ctx.location.latitude, ctx.location.longitude), datetime: ctx.datetime };
+  return {
+    coordinates: coordsParam(ctx.location.latitude, ctx.location.longitude),
+    datetime: ctx.datetime,
+    // Prokerala accepts a `language` param on every endpoint (credits cost
+    // more for non-English per their pricing page). "hi" is the standard
+    // ISO 639-1 code — worth a quick live-response check the first time
+    // real credentials are used, in case Prokerala expects a different code.
+    language: ctx.locale === "hi" ? "hi" : "en",
+  };
 }
 
 // --- Provider -----------------------------------------------------------------

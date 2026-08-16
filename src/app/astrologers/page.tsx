@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import AstrologerCard from "@/components/ui/AstrologerCard";
 import { getAstrologers } from "@/lib/data/astrologers";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { Astrologer, AstrologerStatus, ConsultMode } from "@/types";
 
 type StatusFilter = "all" | AstrologerStatus;
 type ModeFilter = "all" | ConsultMode;
 
 export default function AstrologersPage() {
+  const { t } = useLanguage();
+  const a = t.astrologers;
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [modeFilter, setModeFilter] = useState<ModeFilter>("all");
@@ -31,10 +34,9 @@ export default function AstrologersPage() {
 
   return (
     <div className="container section">
-      <h2>Talk to an Astrologer</h2>
+      <h2>{a.pageTitle}</h2>
       <p style={{ marginBottom: 20, color: "var(--ink-soft)" }}>
-        <strong style={{ color: "var(--green)" }}>{online} astrologers online now</strong> — first
-        minute free for new users.
+        <strong style={{ color: "var(--green)" }}>{online} {a.onlineNow}</strong> — {a.firstMinuteFree}
       </p>
 
       <div className="filter-bar">
@@ -51,25 +53,25 @@ export default function AstrologersPage() {
         ))}
         <span style={{ width: 1, background: "var(--line)", flexShrink: 0 }} />
         <button className={`chip ${marriageOnly ? "active" : ""}`} onClick={() => setMarriageOnly((m) => !m)}>
-          💑 Marriage Astrologers
+          💑 {a.marriageAstrologers}
         </button>
       </div>
 
       {marriageOnly && (
         <p style={{ marginBottom: 16, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
           Specialists in Kundali Milan and marriage compatibility — for the full 36-point Guna Milan
-          score, try <a href="/match" style={{ color: "var(--gold-bright)", fontWeight: 600 }}>Kundali Matching</a> first.
+          score, try <a href="/match" style={{ color: "var(--gold-bright)", fontWeight: 600 }}>{t.nav.kundaliMatching}</a> first.
         </p>
       )}
 
       <div className="grid grid-3">
-        {visible.map((a) => (
-          <AstrologerCard key={a.id} astrologer={a} />
+        {visible.map((astro) => (
+          <AstrologerCard key={astro.id} astrologer={astro} />
         ))}
       </div>
       {visible.length === 0 && (
         <p style={{ color: "var(--ink-soft)", textAlign: "center", padding: "40px 0" }}>
-          No astrologers match these filters right now — try widening your search.
+          {a.noMatch}
         </p>
       )}
     </div>
