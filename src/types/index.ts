@@ -94,11 +94,21 @@ export interface Astrologer {
   officeLocation?: string; // set when "in-person" is offered
 }
 
+/** A structured "subscribe to see the benefit" card, rendered in place of a plain text bubble. */
+export interface ChatUpsellPayload {
+  headline: string;
+  benefits: string[];
+  ctaLabel: string;
+  ctaHref: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "ai";
   text: string;
   timestamp: number;
+  kind?: "text" | "upsell"; // default "text" when absent
+  upsell?: ChatUpsellPayload;
 }
 
 export interface PlusPlan {

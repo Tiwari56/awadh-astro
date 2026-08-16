@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, FormEvent } from "react";
-import type { ChatMessage } from "@/types";
+import Link from "next/link";
+import type { ChatMessage, ChatUpsellPayload } from "@/types";
 
 const WELCOME: ChatMessage = {
   id: "welcome",
@@ -9,6 +10,45 @@ const WELCOME: ChatMessage = {
   text: "Namaste 🙏 I am your Awadh Astro AI guide. Ask me anything about your kundali, an upcoming decision, or today's panchang.",
   timestamp: Date.now(),
 };
+
+const HOROSCOPE_TIMES = ["6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "8:00 PM", "9:00 PM"];
+
+/** The consulting-intent upsell card — shows Plus benefits + a (dummy, local-only) horoscope-time preference. */
+function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
+  const [time, setTime] = useState(HOROSCOPE_TIMES[1]);
+  const [saved, setSaved] = useState(false);
+
+  function savePreference() {
+    localStorage.setItem("awadh-horoscope-time-pref", time);
+    setSaved(true);
+  }
+
+  return (
+    <div className="msg msg-ai msg-upsell">
+      <div className="upsell-card">
+        <div className="upsell-headline">✨ {upsell.headline}</div>
+        <ul className="upsell-benefits">
+          {upsell.benefits.map((b) => <li key={b}>{b}</li>)}
+        </ul>
+        <Link href={upsell.ctaHref} className="btn btn-primary btn-sm" style={{ width: "100%", justifyContent: "center" }}>
+          {upsell.ctaLabel}
+        </Link>
+        <div className="upsell-schedule">
+          <span>📅 Once subscribed, get your daily horoscope at</span>
+          <div className="upsell-schedule-row">
+            <select value={time} onChange={(e) => { setTime(e.target.value); setSaved(false); }}>
+              {HOROSCOPE_TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <button type="button" className="btn btn-outline btn-sm" onClick={savePreference}>
+              {saved ? "✓ Saved" : "Save time"}
+            </button>
+          </div>
+          <span className="opt">We&apos;ll deliver this here in chat for now — WhatsApp delivery is coming soon for Plus members.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
@@ -26,6 +66,7 @@ export default function ChatPage() {
     if (!text || sending) return;
 
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", text, timestamp: Date.now() };
+    const history = messages.map((m) => ({ role: m.role, text: m.text }));
     setMessages((m) => [...m, userMsg]);
     setInput("");
     setSending(true);
@@ -34,14 +75,16 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history }),
       });
-      const data = (await res.json()) as { reply?: string; error?: string };
+      const data = (await res.json()) as { text?: string; kind?: "text" | "upsell"; upsell?: ChatUpsellPayload; error?: string };
       const aiMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "ai",
-        text: data.reply ?? data.error ?? "Sorry, I could not respond. Please try again.",
+        text: data.text ?? data.error ?? "Sorry, I could not respond. Please try again.",
         timestamp: Date.now(),
+        kind: data.kind ?? "text",
+        upsell: data.upsell,
       };
       setMessages((m) => [...m, aiMsg]);
     } catch {
@@ -59,11 +102,18 @@ export default function ChatPage() {
       <h2>AI Astro Chat</h2>
       <div className="chat-box">
         <div className="chat-messages">
-          {messages.map((m) => (
-            <div key={m.id} className={`msg ${m.role === "user" ? "msg-user" : "msg-ai"}`}>
-              {m.text}
-            </div>
-          ))}
+          {messages.map((m) =>
+            m.kind === "upsell" && m.upsell ? (
+              <div key={m.id}>
+                <div className="msg msg-ai">{m.text}</div>
+                <UpsellCard upsell={m.upsell} />
+              </div>
+            ) : (
+              <div key={m.id} className={`msg ${m.role === "user" ? "msg-user" : "msg-ai"}`}>
+                {m.text}
+              </div>
+            )
+          )}
           {sending && <div className="msg msg-ai">Consulting the stars…</div>}
           <div ref={bottomRef} />
         </div>
