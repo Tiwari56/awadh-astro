@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -138,6 +138,19 @@ export default function Header() {
                 <Link href="/account" className="header-avatar" aria-label="My Account">
                   {(session.user.name || session.user.phone || "U").replace(/^\+?91/, "")[0].toUpperCase()}
                 </Link>
+                <button
+                  type="button"
+                  className="header-signout"
+                  aria-label="Sign out"
+                  title="Sign out"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
               </>
             ) : (
               <Link href="/login" className="btn btn-primary btn-sm">Sign In</Link>
@@ -162,9 +175,19 @@ export default function Header() {
               <ThemeToggle />
             </div>
             {session?.user ? (
-              <Link href="/account" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
-                My Account {balance !== null && `· ₹${balance.toLocaleString("en-IN")}`}
-              </Link>
+              <>
+                <Link href="/account" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
+                  My Account {balance !== null && `· ₹${balance.toLocaleString("en-IN")}`}
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ marginTop: 10, width: "100%" }}
+                  onClick={() => { setMobileOpen(false); signOut({ callbackUrl: "/" }); }}
+                >
+                  Sign Out
+                </button>
+              </>
             ) : (
               <Link href="/login" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
                 Sign In
