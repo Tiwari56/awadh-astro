@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { matchKundali, type MatchPerson, type MatchResult } from "@/lib/astrology/matching";
+import type { MatchPerson, MatchResult } from "@/lib/astrology/matching";
 
 const EMPTY: MatchPerson = { name: "", dateOfBirth: "", timeOfBirth: "", placeOfBirth: "" };
 
@@ -73,12 +73,22 @@ export default function MatchPage() {
   const [groom, setGroom] = useState<MatchPerson>(EMPTY);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
-      setResult(await matchKundali(bride, groom));
+      const res = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bride, groom }),
+      });
+      if (!res.ok) throw new Error("Could not compute the match. Please try again.");
+      setResult((await res.json()) as MatchResult);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -130,6 +140,7 @@ export default function MatchPage() {
             <PersonFields role="Bride" hindi="वधू" value={bride} onChange={setBride} />
             <PersonFields role="Groom" hindi="वर" value={groom} onChange={setGroom} />
           </div>
+          {error && <p style={{ color: "var(--danger)", fontSize: "0.9rem", marginBottom: 14 }}>{error}</p>}
           <button className="btn btn-primary" type="submit" disabled={loading} style={{ minWidth: 220 }}>
             {loading ? "Matching…" : "Match Kundalis"}
           </button>

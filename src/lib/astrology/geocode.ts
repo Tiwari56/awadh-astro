@@ -98,3 +98,34 @@ export function formatUtcOffset(offsetSeconds: number): string {
   const mm = String(Math.floor((abs % 3600) / 60)).padStart(2, "0");
   return `${sign}${hh}:${mm}`;
 }
+
+/** "1994-03-21" + "04:35" + 19800s → "1994-03-21T04:35:00+05:30". Shared by every provider. */
+export function buildIsoDatetime(dateOfBirth: string, timeOfBirth: string, utcOffsetSeconds: number): string {
+  return `${dateOfBirth}T${timeOfBirth}:00${formatUtcOffset(utcOffsetSeconds)}`;
+}
+
+/**
+ * Geocode a place and resolve it to a full birth context (coordinates + ISO
+ * datetime), falling back to Ayodhya/IST — sensible for this platform's core
+ * audience — when the place can't be geocoded. Shared by kundali + matching
+ * so both degrade the same way instead of duplicating this fallback logic.
+ */
+export async function resolveBirthLocation(
+  placeOfBirth: string,
+  dateOfBirth: string,
+  timeOfBirth: string
+): Promise<{ location: GeoLocation; datetime: string; geocoded: boolean }> {
+  const found = await geocodePlace(placeOfBirth);
+  const location = found ?? {
+    label: placeOfBirth || "Ayodhya, Uttar Pradesh, India",
+    latitude: 26.7922,
+    longitude: 82.1998,
+    timezone: "Asia/Kolkata",
+    utcOffsetSeconds: 19800,
+  };
+  return {
+    location,
+    datetime: buildIsoDatetime(dateOfBirth, timeOfBirth, location.utcOffsetSeconds),
+    geocoded: found !== null,
+  };
+}
