@@ -10,7 +10,12 @@ import * as schema from "./schema";
  * integration. We don't use db.transaction() anywhere, so neon-http's lack
  * of interactive multi-statement transactions isn't a limitation here.
  */
-const connectionString = process.env.DATABASE_URL ?? "postgres://localhost:5432/awadh_astro_dev";
+// neon()'s own validator requires the "postgresql://" scheme specifically
+// (not the "postgres://" short form many other pg clients accept) — using
+// the wrong scheme here throws at import time, which crashes the whole
+// Next.js build during "Collecting page data" (every route module gets
+// imported to be inspected, running this top-level code).
+const connectionString = process.env.DATABASE_URL ?? "postgresql://user:pass@localhost:5432/awadh_astro_dev";
 
 const sql = neon(connectionString);
 export const db = drizzle(sql, { schema });
