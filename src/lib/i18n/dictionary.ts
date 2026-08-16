@@ -86,10 +86,16 @@ export interface Dictionary {
     liveStream: string; total: string; offerSankalp: string; paymentNote: string;
     promoCode: string; applyPromo: string;
     modeLabel: string; modeOnline: string; modeOffline: string; payWallet: string; payCash: string;
+    walletBalance: string; insufficientBalance: string; payNow: string; viewMyBookings: string;
+    suggestedForYou: string; remedyBookedNote: string;
   };
   astrologers: { pageTitle: string; onlineNow: string; firstMinuteFree: string; marriageAstrologers: string; noMatch: string };
   plus: { pageTitle: string; subtitle: string; currentPlan: string; subscribe: string; paymentNote: string };
   chat: { welcome: string; placeholder: string; send: string; disclaimer: string; consulting: string };
+  tracking: {
+    pageTitle: string; empty: string; viewMyBookings: string; bookedOn: string;
+    statusRequested: string; statusMuhuratConfirmed: string; statusPerformed: string; statusPrasadShipped: string; statusDelivered: string;
+  };
 }
 
 const en: Dictionary = {
@@ -176,10 +182,17 @@ const en: Dictionary = {
     promoCode: "Promo Code", applyPromo: "Apply",
     modeLabel: "How would you like this performed?", modeOnline: "Online (Live Stream)", modeOffline: "In-Person at My Location",
     payWallet: "Pay via Wallet", payCash: "Cash before the puja begins",
+    walletBalance: "Wallet Balance", insufficientBalance: "Insufficient wallet balance. Add money to your wallet to continue (coming soon).",
+    payNow: "Pay & Offer Sankalp", viewMyBookings: "View My Bookings", suggestedForYou: "Suggested for You", remedyBookedNote: "This addresses the dosha we flagged in your kundali.",
   },
   astrologers: { pageTitle: "Talk to an Astrologer", onlineNow: "astrologers online now", firstMinuteFree: "first minute free for new users.", marriageAstrologers: "Marriage Astrologers", noMatch: "No astrologers match these filters right now — try widening your search." },
   plus: { pageTitle: "Awadh Plus", subtitle: "Your kundali, working for you every day.", currentPlan: "Current Plan", subscribe: "Subscribe", paymentNote: "Payments will be processed via Razorpay (UPI, cards, net banking). Cancel anytime." },
   chat: { welcome: "Namaste 🙏 I am your Awadh Astro AI guide. Ask me anything about your kundali, an upcoming decision, or today's panchang.", placeholder: "Ask about your kundali, career, marriage…", send: "Send", disclaimer: "You are chatting with an AI. Guidance is spiritual/informational only.", consulting: "Consulting the stars…" },
+  tracking: {
+    pageTitle: "My Bookings", empty: "You haven't booked any seva yet.", viewMyBookings: "View My Bookings", bookedOn: "Booked on",
+    statusRequested: "Requested", statusMuhuratConfirmed: "Muhurat Confirmed", statusPerformed: "Puja Performed",
+    statusPrasadShipped: "Prasad Shipped", statusDelivered: "Delivered",
+  },
 };
 
 const hi: Dictionary = {
@@ -266,10 +279,17 @@ const hi: Dictionary = {
     promoCode: "प्रोमो कोड", applyPromo: "लागू करें",
     modeLabel: "यह पूजा किस प्रकार संपन्न कराना चाहेंगे?", modeOnline: "ऑनलाइन (लाइव स्ट्रीम)", modeOffline: "व्यक्तिगत रूप से मेरे स्थान पर",
     payWallet: "वॉलेट से भुगतान करें", payCash: "पूजा शुरू होने से पहले नकद भुगतान",
+    walletBalance: "वॉलेट बैलेंस", insufficientBalance: "वॉलेट में पर्याप्त राशि नहीं है। जारी रखने के लिए वॉलेट में पैसे जोड़ें (जल्द आ रहा है)।",
+    payNow: "भुगतान करें और संकल्प अर्पित करें", viewMyBookings: "मेरी बुकिंग देखें", suggestedForYou: "आपके लिए सुझाव", remedyBookedNote: "यह आपकी कुंडली में पहचाने गए दोष का समाधान करता है।",
   },
   astrologers: { pageTitle: "ज्योतिषी से बात करें", onlineNow: "ज्योतिषी अभी ऑनलाइन हैं", firstMinuteFree: "नए उपयोगकर्ताओं के लिए पहला मिनट मुफ़्त।", marriageAstrologers: "विवाह ज्योतिषी", noMatch: "इन फ़िल्टर से कोई ज्योतिषी नहीं मिला — कृपया खोज का दायरा बढ़ाएं।" },
   plus: { pageTitle: "अवध प्लस", subtitle: "आपकी कुंडली, हर दिन आपके लिए काम करेगी।", currentPlan: "वर्तमान योजना", subscribe: "सदस्यता लें", paymentNote: "भुगतान Razorpay (UPI, कार्ड, नेट बैंकिंग) के माध्यम से किया जाएगा। कभी भी रद्द करें।" },
   chat: { welcome: "नमस्ते 🙏 मैं आपका अवध एस्ट्रो एआई मार्गदर्शक हूं। अपनी कुंडली, किसी आगामी निर्णय, या आज के पंचांग के बारे में कुछ भी पूछें।", placeholder: "अपनी कुंडली, करियर, विवाह के बारे में पूछें…", send: "भेजें", disclaimer: "आप एक एआई से चैट कर रहे हैं। मार्गदर्शन केवल आध्यात्मिक/सूचनात्मक है।", consulting: "सितारों से पूछा जा रहा है…" },
+  tracking: {
+    pageTitle: "मेरी बुकिंग", empty: "आपने अभी तक कोई सेवा बुक नहीं की है।", viewMyBookings: "मेरी बुकिंग देखें", bookedOn: "बुक की गई तारीख",
+    statusRequested: "अनुरोध किया गया", statusMuhuratConfirmed: "मुहूर्त पुष्ट", statusPerformed: "पूजा संपन्न",
+    statusPrasadShipped: "प्रसाद भेजा गया", statusDelivered: "पहुंच गया",
+  },
 };
 
 const bn: Dictionary = {
@@ -356,10 +376,17 @@ const bn: Dictionary = {
     promoCode: "প্রোমো কোড", applyPromo: "প্রয়োগ করুন",
     modeLabel: "এই পূজা কীভাবে সম্পন্ন করতে চান?", modeOnline: "অনলাইন (লাইভ স্ট্রিম)", modeOffline: "সশরীরে আমার স্থানে",
     payWallet: "ওয়ালেট দিয়ে পেমেন্ট করুন", payCash: "পূজা শুরুর আগে নগদ",
+    walletBalance: "ওয়ালেট ব্যালেন্স", insufficientBalance: "ওয়ালেটে পর্যাপ্ত অর্থ নেই। চালিয়ে যেতে ওয়ালেটে টাকা যোগ করুন (শীঘ্রই আসছে)।",
+    payNow: "পেমেন্ট করুন ও সংকল্প নিবেদন করুন", viewMyBookings: "আমার বুকিং দেখুন", suggestedForYou: "আপনার জন্য প্রস্তাবিত", remedyBookedNote: "এটি আপনার কুষ্ঠিতে চিহ্নিত দোষের সমাধান করে।",
   },
   astrologers: { pageTitle: "জ্যোতিষীর সাথে কথা বলুন", onlineNow: "জ্যোতিষী এখন অনলাইনে আছেন", firstMinuteFree: "নতুন ব্যবহারকারীদের জন্য প্রথম মিনিট ফ্রি।", marriageAstrologers: "বিবাহ জ্যোতিষী", noMatch: "এই ফিল্টারে কোনো জ্যোতিষী পাওয়া যায়নি — আপনার অনুসন্ধান প্রসারিত করুন।" },
   plus: { pageTitle: "অবধ প্লাস", subtitle: "আপনার কুষ্ঠি, প্রতিদিন আপনার জন্য কাজ করবে।", currentPlan: "বর্তমান পরিকল্পনা", subscribe: "সাবস্ক্রাইব করুন", paymentNote: "পেমেন্ট Razorpay (UPI, কার্ড, নেট ব্যাংকিং) এর মাধ্যমে প্রক্রিয়া করা হবে। যেকোনো সময় বাতিল করুন।" },
   chat: { welcome: "নমস্তে 🙏 আমি আপনার অবধ অ্যাস্ট্রো এআই গাইড। আপনার কুষ্ঠি, আসন্ন সিদ্ধান্ত বা আজকের পঞ্চাঙ্গ সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করুন।", placeholder: "আপনার কুষ্ঠি, ক্যারিয়ার, বিবাহ সম্পর্কে জিজ্ঞাসা করুন…", send: "পাঠান", disclaimer: "আপনি একটি এআই এর সাথে চ্যাট করছেন। নির্দেশনা শুধুমাত্র আধ্যাত্মিক/তথ্যগত।", consulting: "তারাদের কাছে জিজ্ঞাসা করা হচ্ছে…" },
+  tracking: {
+    pageTitle: "আমার বুকিং", empty: "আপনি এখনও কোনো সেবা বুক করেননি।", viewMyBookings: "আমার বুকিং দেখুন", bookedOn: "বুক করা হয়েছে",
+    statusRequested: "অনুরোধ করা হয়েছে", statusMuhuratConfirmed: "মুহূর্ত নিশ্চিত", statusPerformed: "পূজা সম্পন্ন",
+    statusPrasadShipped: "প্রসাদ পাঠানো হয়েছে", statusDelivered: "পৌঁছেছে",
+  },
 };
 
 const mr: Dictionary = {
@@ -446,10 +473,17 @@ const mr: Dictionary = {
     promoCode: "प्रोमो कोड", applyPromo: "लागू करा",
     modeLabel: "ही पूजा कशी करून घ्यायला आवडेल?", modeOnline: "ऑनलाइन (थेट प्रक्षेपण)", modeOffline: "प्रत्यक्ष माझ्या ठिकाणी",
     payWallet: "वॉलेटने पेमेंट करा", payCash: "पूजा सुरू होण्यापूर्वी रोख",
+    walletBalance: "वॉलेट शिल्लक", insufficientBalance: "वॉलेटमध्ये पुरेशी शिल्लक नाही. सुरू ठेवण्यासाठी वॉलेटमध्ये पैसे जोडा (लवकरच येत आहे).",
+    payNow: "पैसे द्या आणि संकल्प अर्पण करा", viewMyBookings: "माझ्या बुकिंग पहा", suggestedForYou: "आपल्यासाठी सुचवलेले", remedyBookedNote: "हे आपल्या कुंडलीत आढळलेल्या दोषाचे निराकरण करते.",
   },
   astrologers: { pageTitle: "ज्योतिषाशी बोला", onlineNow: "ज्योतिषी आता ऑनलाइन आहेत", firstMinuteFree: "नवीन वापरकर्त्यांसाठी पहिला मिनिट मोफत.", marriageAstrologers: "विवाह ज्योतिषी", noMatch: "या फिल्टरशी जुळणारे ज्योतिषी सापडले नाहीत — कृपया शोध व्यापक करा." },
   plus: { pageTitle: "अवध प्लस", subtitle: "आपली कुंडली, दररोज आपल्यासाठी काम करेल.", currentPlan: "सध्याची योजना", subscribe: "सदस्यता घ्या", paymentNote: "पेमेंट Razorpay (UPI, कार्ड, नेट बँकिंग) द्वारे प्रक्रिया केले जाईल. कधीही रद्द करा." },
   chat: { welcome: "नमस्ते 🙏 मी आपला अवध अ‍ॅस्ट्रो एआय मार्गदर्शक आहे. आपल्या कुंडली, आगामी निर्णय किंवा आजच्या पंचांगाबद्दल काहीही विचारा.", placeholder: "आपली कुंडली, करिअर, विवाहाबद्दल विचारा…", send: "पाठवा", disclaimer: "आपण एआयशी चॅट करत आहात. मार्गदर्शन केवळ आध्यात्मिक/माहितीपर आहे.", consulting: "ताऱ्यांना विचारले जात आहे…" },
+  tracking: {
+    pageTitle: "माझ्या बुकिंग", empty: "आपण अजून कोणतीही सेवा बुक केलेली नाही.", viewMyBookings: "माझ्या बुकिंग पहा", bookedOn: "बुक केले",
+    statusRequested: "विनंती केली", statusMuhuratConfirmed: "मुहूर्त निश्चित", statusPerformed: "पूजा संपन्न",
+    statusPrasadShipped: "प्रसाद पाठवला", statusDelivered: "पोहोचले",
+  },
 };
 
 export const DICTIONARIES: Record<Locale, Dictionary> = { en, hi, bn, mr };

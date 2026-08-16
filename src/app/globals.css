@@ -570,6 +570,38 @@ table.planets tr:nth-child(even) td, table.planets-table tr:nth-child(even) td {
 .cart-summary { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 6px; }
 .cart-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--ink-soft); }
 
+/* ---------- puja mode + wallet ---------- */
+.mode-toggle { display: flex; gap: 8px; }
+.mode-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg-grad); color: var(--ink-soft); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.mode-btn:hover { border-color: var(--gold-deep); }
+.mode-btn.active { background: rgba(224, 166, 58, 0.12); border-color: var(--gold); color: var(--gold-bright); }
+.wallet-balance-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 10px; background: rgba(134, 196, 137, 0.1); border: 1px solid rgba(134, 196, 137, 0.3); font-size: 0.88rem; font-weight: 600; color: var(--green); }
+
+/* ---------- confirmation suggestions ---------- */
+.confirm-suggestions { text-align: left; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 8px; }
+.confirm-suggestions h4 { color: var(--gold-bright); font-size: 0.95rem; margin-bottom: 10px; }
+.suggestion-card { display: block; padding: 14px; text-align: left; }
+.suggestion-title { font-weight: 700; color: var(--ink); font-size: 0.9rem; margin-bottom: 4px; }
+.suggestion-meta { font-size: 0.78rem; color: var(--ink-soft); }
+
+/* ---------- booking tracker ---------- */
+.booking-card { display: flex; flex-direction: column; gap: 10px; }
+.booking-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.booking-name { font-weight: 700; color: var(--ink); font-size: 1rem; }
+.booking-devotee { font-size: 0.82rem; color: var(--ink-soft); }
+.booking-amount { font-family: var(--font-display-stack); color: var(--gold-bright); font-size: 1.1rem; }
+.booking-date { font-size: 0.76rem; color: var(--muted); }
+.status-tracker { display: flex; align-items: flex-start; gap: 2px; margin-top: 6px; }
+.status-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+.status-step::before { content: ""; position: absolute; top: 5px; left: -50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+.status-step:first-child::before { display: none; }
+.status-step.done::before { background: var(--gold); }
+.status-dot-lg { width: 12px; height: 12px; border-radius: 50%; background: var(--line); border: 2px solid var(--surface); position: relative; z-index: 1; }
+.status-step.done .status-dot-lg { background: var(--gold); }
+.status-step.current .status-dot-lg { background: var(--green); box-shadow: 0 0 0 3px rgba(134, 196, 137, 0.25); }
+.status-label { font-size: 0.62rem; color: var(--ink-soft); text-align: center; line-height: 1.2; }
+.status-step.done .status-label, .status-step.current .status-label { color: var(--ink); font-weight: 600; }
+
 /* kundali matching */
 .match-pair { display: flex; align-items: stretch; gap: 10px; margin-bottom: 8px; }
 .mp { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 12px; text-align: center; }
