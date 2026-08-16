@@ -6,6 +6,15 @@ export interface BirthDetails {
   timeOfBirth: string; // HH:mm
   placeOfBirth: string;
   gender: "male" | "female" | "other";
+  /**
+   * True when the user doesn't know their exact birth time. We fall back to
+   * 12:00 noon (a standard astrological convention for unknown-time charts)
+   * and the UI must disclose that Ascendant/houses are then approximate —
+   * Moon/Sun sign and nakshatra are still accurate since those don't shift
+   * within a single day. No astrology API we use has a dedicated
+   * "time unknown" parameter, so this is handled entirely on our side.
+   */
+  timeUnknown?: boolean;
 }
 
 export interface PlanetPosition {

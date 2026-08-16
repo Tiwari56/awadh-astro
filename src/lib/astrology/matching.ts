@@ -22,6 +22,8 @@ export interface MatchPerson {
   dateOfBirth: string; // YYYY-MM-DD
   timeOfBirth: string; // HH:mm
   placeOfBirth: string;
+  /** See BirthDetails.timeUnknown in @/types — same 12:00-noon fallback convention. */
+  timeUnknown?: boolean;
 }
 
 export interface Koota {
@@ -128,8 +130,8 @@ function matchKootaKey(name: string): string | null {
 
 async function prokeralaMatchKundali(bride: MatchPerson, groom: MatchPerson): Promise<MatchResult> {
   const [girl, boy] = await Promise.all([
-    resolveBirthLocation(bride.placeOfBirth, bride.dateOfBirth, bride.timeOfBirth),
-    resolveBirthLocation(groom.placeOfBirth, groom.dateOfBirth, groom.timeOfBirth),
+    resolveBirthLocation(bride.placeOfBirth, bride.dateOfBirth, bride.timeOfBirth, bride.timeUnknown),
+    resolveBirthLocation(groom.placeOfBirth, groom.dateOfBirth, groom.timeOfBirth, groom.timeUnknown),
   ]);
 
   const data = await prokeralaGet<KundliMatchingData>("/v2/astrology/kundli-matching/advanced", {

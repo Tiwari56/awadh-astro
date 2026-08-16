@@ -113,7 +113,8 @@ export function buildIsoDatetime(dateOfBirth: string, timeOfBirth: string, utcOf
 export async function resolveBirthLocation(
   placeOfBirth: string,
   dateOfBirth: string,
-  timeOfBirth: string
+  timeOfBirth: string,
+  timeUnknown = false
 ): Promise<{ location: GeoLocation; datetime: string; geocoded: boolean }> {
   const found = await geocodePlace(placeOfBirth);
   const location = found ?? {
@@ -123,9 +124,13 @@ export async function resolveBirthLocation(
     timezone: "Asia/Kolkata",
     utcOffsetSeconds: 19800,
   };
+  // Unknown birth time: fall back to 12:00 noon, the standard astrological
+  // convention. Moon/Sun sign and nakshatra stay accurate; Ascendant/houses
+  // become approximate — callers must disclose this in the UI.
+  const effectiveTime = timeUnknown ? "12:00" : timeOfBirth;
   return {
     location,
-    datetime: buildIsoDatetime(dateOfBirth, timeOfBirth, location.utcOffsetSeconds),
+    datetime: buildIsoDatetime(dateOfBirth, effectiveTime, location.utcOffsetSeconds),
     geocoded: found !== null,
   };
 }

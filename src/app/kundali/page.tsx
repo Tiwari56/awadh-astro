@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
+import NorthIndianChart from "@/components/ui/NorthIndianChart";
 import type { BirthDetails, DoshaSummary, KundaliResult } from "@/types";
 
 function DoshaCard({ title, dosha }: { title: string; dosha: DoshaSummary }) {
@@ -34,22 +36,25 @@ function RemedyCta({ dosha, remedyKey }: { dosha: DoshaSummary; remedyKey: keyof
         <b>Suggested remedy: {remedy.title}</b>
         {remedy.reason}
       </span>
-      <a href={`/seva?puja=${remedy.pujaId}`} className="btn btn-primary btn-sm">Book</a>
+      <a href={`/seva?puja=${remedy.pujaId}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">Book</a>
     </div>
   );
 }
 
-const TABS = ["Basic", "Panchang", "Dasha", "Doshas", "Planets", "Report"] as const;
+const TABS = ["Basic", "Chart", "Panchang", "Dasha", "Doshas", "Planets", "Report"] as const;
 type Tab = (typeof TABS)[number];
 
+const EMPTY_FORM: BirthDetails = {
+  name: "",
+  dateOfBirth: "",
+  timeOfBirth: "",
+  placeOfBirth: "",
+  gender: "male",
+  timeUnknown: false,
+};
+
 export default function KundaliPage() {
-  const [form, setForm] = useState<BirthDetails>({
-    name: "",
-    dateOfBirth: "",
-    timeOfBirth: "",
-    placeOfBirth: "",
-    gender: "male",
-  });
+  const [form, setForm] = useState<BirthDetails>(EMPTY_FORM);
   const [result, setResult] = useState<KundaliResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,13 +101,25 @@ export default function KundaliPage() {
           </div>
           <div className="field">
             <label htmlFor="tob">Time of Birth</label>
-            <input id="tob" type="time" required value={form.timeOfBirth}
+            <input id="tob" type="time" required={!form.timeUnknown} disabled={form.timeUnknown}
+              value={form.timeUnknown ? "" : form.timeOfBirth}
               onChange={(e) => set("timeOfBirth", e.target.value)} />
+            <label className="checkbox-row" style={{ marginTop: 8 }}>
+              <input type="checkbox" checked={form.timeUnknown ?? false}
+                onChange={(e) => set("timeUnknown", e.target.checked)} />
+              <span>I don&apos;t know my exact birth time</span>
+            </label>
+            {form.timeUnknown && (
+              <p className="opt" style={{ marginTop: 4 }}>
+                We&apos;ll use 12:00 noon as a standard approximation. Your Moon sign and nakshatra will
+                still be accurate; Ascendant and house positions become approximate.
+              </p>
+            )}
           </div>
           <div className="field">
             <label htmlFor="pob">Place of Birth</label>
-            <input id="pob" required value={form.placeOfBirth} placeholder="e.g. Ayodhya, Uttar Pradesh"
-              onChange={(e) => set("placeOfBirth", e.target.value)} />
+            <PlaceAutocomplete id="pob" required value={form.placeOfBirth}
+              placeholder="Start typing a city…" onChange={(v) => set("placeOfBirth", v)} />
           </div>
           <div className="field">
             <label htmlFor="gender">Gender</label>
@@ -123,6 +140,12 @@ export default function KundaliPage() {
       {result && (
         <div>
           <p className="result-name">Kundali for <strong>{form.name}</strong> · {form.dateOfBirth} · {form.placeOfBirth}</p>
+          {form.timeUnknown && (
+            <p className="kundali-time-note">
+              ⚠️ Birth time unknown — computed using 12:00 noon. Ascendant and house placements shown
+              below are approximate; Moon sign and nakshatra remain accurate.
+            </p>
+          )}
 
           <nav className="kundali-tabs" aria-label="Kundali sections">
             {TABS.map((tb) => (
@@ -151,6 +174,18 @@ export default function KundaliPage() {
             </div>
 
             <p className="insight">“{result.dailyInsight}”</p>
+          </div>
+
+          {/* Chart */}
+          <div className={`tab-panel ${tab === "Chart" ? "active" : ""}`}>
+            <h3 className="kundali-section-title">🕉️ Birth Chart (North Indian)</h3>
+            <div className="card chart-wrap">
+              <NorthIndianChart ascendant={result.ascendant} planets={result.planets} />
+            </div>
+            <p className="kundali-disclaimer" style={{ textAlign: "center" }}>
+              House 1 (top) is your Ascendant. Planet positions are shown by house, following the
+              standard North Indian chart convention.
+            </p>
           </div>
 
           {/* Panchang */}
@@ -248,10 +283,11 @@ export default function KundaliPage() {
           {/* Report / download */}
           <div className={`tab-panel ${tab === "Report" ? "active" : ""}`}>
             <div className="card report-cover">
+              <div className="report-cover-om">ॐ</div>
               <h3>Your Complete Kundali Report</h3>
               <p style={{ color: "var(--ink-soft)", marginBottom: 18 }}>
-                Downloads every section above — birth details, panchang, dashas, dosha check, and full
-                planetary positions — as a single printable PDF.
+                Downloads every section above — birth details, chart, panchang, dashas, dosha check, and
+                full planetary positions — as a single printable, devotionally styled report.
               </p>
               <button className="btn btn-primary" onClick={() => window.print()}>
                 ⬇ Download PDF Report
@@ -265,9 +301,9 @@ export default function KundaliPage() {
           </p>
 
           <div className="hero-actions" style={{ justifyContent: "flex-start", marginTop: 24 }}>
-            <a href="/astrologers" className="btn btn-primary">Discuss with an Astrologer</a>
-            <a href="/seva" className="btn btn-outline">Book a Remedial Puja</a>
-            <button className="btn btn-outline" onClick={() => setResult(null)}>New Kundali</button>
+            <a href="/astrologers" target="_blank" rel="noopener noreferrer" className="btn btn-primary">Discuss with an Astrologer</a>
+            <a href="/seva" target="_blank" rel="noopener noreferrer" className="btn btn-outline">Book a Remedial Puja</a>
+            <a href="/kundali" target="_blank" rel="noopener noreferrer" className="btn btn-outline">New Kundali (opens in new tab)</a>
           </div>
         </div>
       )}

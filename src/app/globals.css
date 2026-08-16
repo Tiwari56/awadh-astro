@@ -433,6 +433,14 @@ a.card:hover, .astro-card:hover, .puja-card:hover { transform: translateY(-4px);
 .field select option { background: var(--surface); color: var(--ink); }
 .checkbox-row { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--ink-soft); cursor: pointer; }
 .checkbox-row input { width: 18px; height: 18px; accent-color: var(--gold); }
+
+/* ---------- place autocomplete ---------- */
+.place-autocomplete { position: relative; }
+.place-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50; background: var(--dropdown-bg); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 12px; padding: 6px; max-height: 240px; overflow-y: auto; box-shadow: var(--shadow-md); }
+.place-suggestion { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; border: none; background: transparent; color: var(--ink-soft); font-size: 0.88rem; cursor: pointer; }
+.place-suggestion:hover { background: rgba(224, 166, 58, 0.1); color: var(--ink); }
+.place-suggestion-empty { color: var(--muted); cursor: default; font-style: italic; }
+.place-suggestion-empty:hover { background: none; color: var(--muted); }
 .inner-card { background: var(--surface); border: 1px solid var(--line); border-top-color: var(--gold-deep); border-radius: var(--r-xl); padding: 28px; box-shadow: var(--shadow-md); }
 
 /* kundali result */
@@ -695,16 +703,44 @@ table.planets tr:nth-child(even) td, table.planets-table tr:nth-child(even) td {
 .report-cover { text-align: center; padding: 28px 20px; }
 .report-cover h3 { color: var(--gold-bright); font-size: 1.3rem; margin-bottom: 8px; }
 
-/* ---------- print (PDF report) ---------- */
+/* ---------- North Indian birth chart ---------- */
+.chart-wrap { max-width: 380px; margin: 0 auto; }
+.kundli-chart { width: 100%; height: auto; display: block; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.15)); }
+.chart-outline { fill: var(--surface); stroke: var(--gold-deep); stroke-width: 2; }
+.chart-line { stroke: var(--gold-deep); stroke-width: 1.4; }
+.chart-line-fill { fill: none; stroke: var(--gold-deep); stroke-width: 1.4; }
+.chart-house-num { font-size: 8px; fill: var(--muted); font-family: var(--font-body-stack); }
+.chart-asc-label { font-size: 9px; fill: var(--gold); font-weight: 700; font-family: var(--font-body-stack); }
+.chart-planet { font-size: 11px; fill: var(--ink); font-weight: 700; font-family: var(--font-body-stack); }
+.chart-planet-retro { fill: var(--danger); }
+
+/* ---------- report cover (screen) ---------- */
+.report-cover-om { font-size: 2.6rem; color: var(--gold); margin-bottom: 4px; }
+.kundali-time-note { background: rgba(224, 166, 58, 0.1); border: 1px solid rgba(224, 166, 58, 0.3); border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; color: var(--gold-bright); margin: 10px 0 16px; }
+
+/* ---------- print (devotional PDF report) ---------- */
+@page { margin: 16mm 14mm; }
 @media print {
   :root, :root[data-theme="dark"], :root[data-theme="light"] {
-    --bg: #ffffff; --surface: #ffffff; --surface-2: #f7f2e6; --ink: #1a1204; --ink-soft: #4a3a20;
-    --line: #d9c9a3; --gold: #92400e; --gold-bright: #92400e; --gold-deep: #6b3009;
+    --bg: #fdf6e6; --surface: #fffdf7; --surface-2: #f7ecd2; --ink: #2a1608; --ink-soft: #5c4322;
+    --line: #d9b877; --gold: #92400e; --gold-bright: #92400e; --gold-deep: #6b3009; --green: #166534; --danger: #991b1b;
   }
   .site-header, .promo-ticker, .bottom-nav, .site-footer, .kundali-tabs, .hero-actions,
-  .promo-modal-overlay, .link-back, .remedy-cta a, .remedy-cta button { display: none !important; }
-  body { background: #fff !important; padding-bottom: 0 !important; }
-  .tab-panel { display: block !important; break-inside: avoid; margin-bottom: 18px; }
-  .card, .inner-card { box-shadow: none !important; border: 1px solid #d9c9a3 !important; }
-  a { color: #1a1204 !important; }
+  .promo-modal-overlay, .link-back, .remedy-cta a, .remedy-cta button, .kundali-time-note { display: none !important; }
+  body { background: #fdf6e6 !important; padding-bottom: 0 !important; }
+  main::before {
+    content: "ॐ  श्री गणेशाय नमः  •  AWADH ASTRO  •  Kundali Report";
+    display: block; text-align: center; font-family: var(--font-display-stack);
+    font-size: 15pt; color: #92400e; padding: 0 0 10px; margin-bottom: 16px;
+    border-bottom: 2.5px double #92400e; letter-spacing: 0.03em;
+  }
+  .tab-panel { display: block !important; break-inside: avoid; margin-bottom: 16px; }
+  .kundali-section-title { border-bottom: 1px solid #d9b877; padding-bottom: 6px; }
+  .card, .inner-card {
+    box-shadow: none !important; background: #fffdf7 !important;
+    border: 1px solid #d9b877 !important; outline: 1px solid #f0dfae; outline-offset: -4px;
+  }
+  .report-cover { display: none !important; } /* the "click to download" card itself doesn't need to print */
+  a { color: #2a1608 !important; }
+  .kundli-chart .chart-outline { fill: #fffdf7; }
 }

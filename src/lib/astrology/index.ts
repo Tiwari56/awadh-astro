@@ -19,7 +19,8 @@ export async function computeKundali(details: BirthDetails): Promise<KundaliResu
   const { location, datetime, geocoded } = await resolveBirthLocation(
     details.placeOfBirth,
     details.dateOfBirth,
-    details.timeOfBirth
+    details.timeOfBirth,
+    details.timeUnknown
   );
 
   // Real provider requires a real geocode. If that failed or Prokerala isn't
