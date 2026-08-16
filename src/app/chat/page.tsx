@@ -7,14 +7,34 @@ import type { ChatMessage, ChatUpsellPayload } from "@/types";
 
 const HOROSCOPE_TIMES = ["6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "8:00 PM", "9:00 PM"];
 
-/** The consulting-intent upsell card — shows Plus benefits + a (dummy, local-only) horoscope-time preference. */
+/**
+ * The consulting-intent upsell card — shows Plus benefits + lets the user
+ * sign up to get their daily horoscope by EMAIL (the founder's call: build
+ * WhatsApp delivery later — a WhatsApp Business API account is a separate
+ * business decision — but wire up email now, since a working email signup
+ * is buildable today). Real delivery still needs an email provider key (see
+ * src/lib/email/providers/resend.ts); until then this calls the dummy
+ * provider, which logs instead of sending — the confirmation UI is real,
+ * the delivery isn't yet.
+ */
 function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
   const [time, setTime] = useState(HOROSCOPE_TIMES[1]);
-  const [saved, setSaved] = useState(false);
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
-  function savePreference() {
-    localStorage.setItem("awadh-horoscope-time-pref", time);
-    setSaved(true);
+  async function subscribe(e: FormEvent) {
+    e.preventDefault();
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/email/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, preferredTime: time }),
+      });
+      setStatus(res.ok ? "sent" : "error");
+    } catch {
+      setStatus("error");
+    }
   }
 
   return (
@@ -27,18 +47,28 @@ function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
         <Link href={upsell.ctaHref} className="btn btn-primary btn-sm" style={{ width: "100%", justifyContent: "center" }}>
           {upsell.ctaLabel}
         </Link>
-        <div className="upsell-schedule">
-          <span>📅 Once subscribed, get your daily horoscope at</span>
+        <form className="upsell-schedule" onSubmit={subscribe}>
+          <span>📧 Get your daily horoscope by email at</span>
           <div className="upsell-schedule-row">
-            <select value={time} onChange={(e) => { setTime(e.target.value); setSaved(false); }}>
+            <select value={time} onChange={(e) => setTime(e.target.value)}>
               {HOROSCOPE_TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
-            <button type="button" className="btn btn-outline btn-sm" onClick={savePreference}>
-              {saved ? "✓ Saved" : "Save time"}
-            </button>
           </div>
-          <span className="opt">We&apos;ll deliver this here in chat for now — WhatsApp delivery is coming soon for Plus members.</span>
-        </div>
+          {status === "sent" ? (
+            <span className="city-note ok">✓ You&apos;re signed up — check your inbox to confirm.</span>
+          ) : (
+            <>
+              <div className="upsell-schedule-row">
+                <input type="email" required placeholder="you@example.com" value={email}
+                  onChange={(e) => setEmail(e.target.value)} style={{ flex: 1 }} />
+                <button type="submit" className="btn btn-outline btn-sm" disabled={status === "sending"}>
+                  {status === "sending" ? "…" : "Sign up"}
+                </button>
+              </div>
+              {status === "error" && <span className="city-note warn">Could not sign up right now — please try again.</span>}
+            </>
+          )}
+        </form>
       </div>
     </div>
   );
