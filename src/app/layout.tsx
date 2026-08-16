@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BottomNav from "@/components/layout/BottomNav";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import SessionProvider from "@/components/providers/SessionProvider";
 
 // Sets html[data-theme] before paint so there's no flash of the wrong theme.
 // Mirrors applyTheme() in ThemeToggle.tsx — keep the two in sync.
@@ -52,12 +53,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
-        <LanguageProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-          <BottomNav />
-        </LanguageProvider>
+        <SessionProvider>
+          <LanguageProvider>
+            <Header />
+            <main>{children}</main>
+            <Footer />
+            <BottomNav />
+          </LanguageProvider>
+        </SessionProvider>
       </body>
     </html>
   );

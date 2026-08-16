@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeKundali } from "@/lib/astrology";
+import { auth } from "@/auth";
+import { db } from "@/lib/db/client";
+import { kundaliRecords } from "@/lib/db/schema";
 import type { BirthDetails } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -12,5 +15,21 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await computeKundali(details as BirthDetails, locale);
+
+  // Persist to the signed-in user's account so it shows up under My Kundalis.
+  // Guests still get their kundali computed (no login wall) — it's just not saved.
+  const session = await auth();
+  if (session?.user?.id) {
+    await db.insert(kundaliRecords).values({
+      userId: session.user.id,
+      subjectName: details.name!,
+      dateOfBirth: details.dateOfBirth!,
+      timeOfBirth: details.timeOfBirth || "12:00",
+      timeUnknown: Boolean(details.timeUnknown),
+      placeOfBirth: details.placeOfBirth!,
+      resultJson: result,
+    });
+  }
+
   return NextResponse.json(result);
 }

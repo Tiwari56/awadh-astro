@@ -195,6 +195,7 @@ img { max-width: 100%; }
 .nav-dropdown-item:hover { background: rgba(224, 166, 58, 0.1); color: var(--gold-bright); }
 .header-cta { display: none; align-items: center; gap: 12px; }
 .header-balance { background: rgba(224, 166, 58, 0.1); border: 1px solid rgba(224, 166, 58, 0.28); border-radius: 999px; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; color: var(--gold-bright); }
+.header-avatar { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(140deg, var(--gold-bright), var(--gold-deep)); color: #231206; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
 
 /* ---------- theme toggle ---------- */
 .theme-toggle { display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
@@ -601,6 +602,56 @@ table.planets tr:nth-child(even) td, table.planets-table tr:nth-child(even) td {
 .status-step.current .status-dot-lg { background: var(--green); box-shadow: 0 0 0 3px rgba(134, 196, 137, 0.25); }
 .status-label { font-size: 0.62rem; color: var(--ink-soft); text-align: center; line-height: 1.2; }
 .status-step.done .status-label, .status-step.current .status-label { color: var(--ink); font-weight: 600; }
+
+/* ---------- auth (login/onboarding) ---------- */
+.auth-card { text-align: center; }
+.auth-om { font-size: 2.4rem; color: var(--gold); margin-bottom: 6px; }
+.phone-input-row { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--amber-border); border-radius: 10px; padding: 0 4px 0 12px; background: var(--bg-grad); }
+.phone-input-row .phone-prefix { font-size: 0.92rem; color: var(--ink-soft); font-weight: 600; flex-shrink: 0; }
+.phone-input-row input { border: none !important; background: transparent !important; padding: 13px 8px !important; }
+.phone-input-row input:focus { outline: none; box-shadow: none !important; }
+.social-login-list { display: grid; gap: 10px; }
+.social-btn { position: relative; width: 100%; gap: 10px; }
+.social-btn:disabled { opacity: 0.55; }
+.coming-soon-badge { font-size: 0.62rem; font-weight: 700; background: var(--surface-2); color: var(--muted); padding: 2px 8px; border-radius: 999px; margin-left: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* ---------- onboarding wizard ---------- */
+.onboarding-progress { display: flex; justify-content: center; gap: 8px; margin: 24px 0 20px; }
+.onboarding-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); transition: background 0.3s; }
+.onboarding-dot.done { background: var(--gold); }
+.onboarding-card { animation: fadeUp 0.4s var(--ease-out) both; }
+.role-choice-grid { display: grid; gap: 12px; }
+.role-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 18px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg-grad); cursor: pointer; text-align: left; transition: all 0.2s; }
+.role-choice:hover { border-color: var(--gold-deep); }
+.role-choice.active { border-color: var(--gold); background: rgba(224, 166, 58, 0.1); }
+.role-choice-icon { font-size: 1.8rem; }
+.role-choice-title { font-weight: 700; color: var(--ink); font-size: 1rem; }
+.role-choice-desc { font-size: 0.82rem; color: var(--ink-soft); }
+.onboarding-plan-choice { display: block; width: 100%; text-align: left; padding: 16px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg-grad); cursor: pointer; transition: all 0.2s; }
+.onboarding-plan-choice:hover { border-color: var(--gold-deep); }
+.onboarding-plan-choice.active { border-color: var(--gold); background: rgba(224, 166, 58, 0.1); }
+.onboarding-plan-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.onboarding-plan-name { font-weight: 700; color: var(--ink); }
+.onboarding-plan-price { font-family: var(--font-display-stack); color: var(--gold-bright); }
+.onboarding-plan-choice ul { list-style: none; display: grid; gap: 4px; }
+.onboarding-plan-choice li { font-size: 0.8rem; color: var(--ink-soft); padding-left: 18px; position: relative; }
+.onboarding-plan-choice li::before { content: "✓"; position: absolute; left: 0; color: var(--green); }
+.wallet-benefit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.wallet-benefit-star { position: relative; display: inline-flex; cursor: help; font-size: 1.1rem; }
+.wallet-benefit-tooltip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(4px);
+  width: 220px; background: var(--dropdown-bg); backdrop-filter: blur(20px); border: 1px solid var(--gold-deep);
+  border-radius: 10px; padding: 10px 12px; font-size: 0.76rem; font-weight: 400; color: var(--ink-soft);
+  line-height: 1.5; text-align: left; opacity: 0; visibility: hidden; pointer-events: none;
+  transition: all 0.2s var(--ease-out); z-index: 30; box-shadow: var(--shadow-md);
+}
+.wallet-benefit-star:hover .wallet-benefit-tooltip, .wallet-benefit-star:focus .wallet-benefit-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+.topup-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.topup-chip { flex: 1; min-width: 100px; padding: 14px 10px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg-grad); color: var(--ink); font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s; }
+.topup-chip:hover { border-color: var(--gold-deep); }
+.topup-chip.active { border-color: var(--gold); background: rgba(224, 166, 58, 0.12); color: var(--gold-bright); }
+.topup-cashback { font-size: 0.68rem; font-weight: 600; color: var(--green); }
+.stat-block { background: var(--bg-grad); border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; }
 
 /* kundali matching */
 .match-pair { display: flex; align-items: stretch; gap: 10px; margin-bottom: 8px; }

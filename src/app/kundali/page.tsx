@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useSession } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
 import NorthIndianChart from "@/components/ui/NorthIndianChart";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -63,6 +64,10 @@ const EMPTY_FORM: BirthDetails = {
 export default function KundaliPage() {
   const { t, locale } = useLanguage();
   const k = t.kundali;
+  const { data: session } = useSession();
+  // Astrologers use the same tool as a professional working on a client's behalf —
+  // same feature, third-person copy (item 8.2 of the platform brief).
+  const isAstrologer = session?.user?.role === "astrologer";
   const [form, setForm] = useState<BirthDetails>(EMPTY_FORM);
   const [result, setResult] = useState<KundaliResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -99,13 +104,13 @@ export default function KundaliPage() {
 
   return (
     <div className="container section">
-      <h2>{k.pageTitle}</h2>
+      <h2>{isAstrologer ? "Fetch Client Kundali" : k.pageTitle}</h2>
 
       {!result && (
         <form className="form card" onSubmit={onSubmit}>
           <div className="field">
-            <label htmlFor="name">{k.fullName}</label>
-            <input id="name" required value={form.name} placeholder={k.namePlaceholder}
+            <label htmlFor="name">{isAstrologer ? "Client's Full Name" : k.fullName}</label>
+            <input id="name" required value={form.name} placeholder={isAstrologer ? "e.g. client name" : k.namePlaceholder}
               onChange={(e) => set("name", e.target.value)} />
           </div>
           <div className="field">

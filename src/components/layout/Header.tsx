@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -19,6 +20,13 @@ export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useLanguage();
+  const { data: session } = useSession();
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!session?.user) { setBalance(null); return; }
+    fetch("/api/wallet").then((r) => r.json()).then((d) => setBalance(d.balanceINR ?? 0)).catch(() => setBalance(null));
+  }, [session?.user]);
 
   const navItems = [
     { label: t.nav.seva, href: "/seva" },
@@ -124,12 +132,16 @@ export default function Header() {
           <div className="header-cta">
             <LanguageSwitcher />
             <ThemeToggle />
-            <div className="header-balance">
-              ₹&nbsp;250
-            </div>
-            <Link href="/astrologers" className="btn btn-primary btn-sm">
-              {t.nav.chatNow}
-            </Link>
+            {session?.user ? (
+              <>
+                {balance !== null && <div className="header-balance">₹&nbsp;{balance.toLocaleString("en-IN")}</div>}
+                <Link href="/account" className="header-avatar" aria-label="My Account">
+                  {(session.user.name ?? "?")[0].toUpperCase()}
+                </Link>
+              </>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm">Sign In</Link>
+            )}
           </div>
         </div>
 
@@ -149,9 +161,15 @@ export default function Header() {
               <LanguageSwitcher />
               <ThemeToggle />
             </div>
-            <Link href="/astrologers" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
-              {t.nav.chatWithAstrologer}
-            </Link>
+            {session?.user ? (
+              <Link href="/account" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
+                My Account {balance !== null && `· ₹${balance.toLocaleString("en-IN")}`}
+              </Link>
+            ) : (
+              <Link href="/login" className="btn btn-primary btn-sm" style={{ marginTop: 16, width: "100%" }} onClick={() => setMobileOpen(false)}>
+                Sign In
+              </Link>
+            )}
           </div>
         )}
       </header>

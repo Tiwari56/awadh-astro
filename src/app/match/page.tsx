@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { Dictionary } from "@/lib/i18n/dictionary";
@@ -79,6 +80,8 @@ function PersonFields({
 export default function MatchPage() {
   const { t, locale } = useLanguage();
   const m = t.match;
+  const { data: session } = useSession();
+  const isAstrologer = session?.user?.role === "astrologer";
   const [bride, setBride] = useState<MatchPerson>(EMPTY);
   const [groom, setGroom] = useState<MatchPerson>(EMPTY);
   const [result, setResult] = useState<MatchResult | null>(null);
@@ -106,7 +109,7 @@ export default function MatchPage() {
 
   return (
     <div className="container section">
-      <h2>{m.pageTitle}</h2>
+      <h2>{isAstrologer ? "Match Customer Kundalis" : m.pageTitle}</h2>
       <p style={{ color: "var(--ink-soft)", marginBottom: 22 }}>
         {m.subtitle} <span className="hi">गुण मिलान</span>
       </p>
