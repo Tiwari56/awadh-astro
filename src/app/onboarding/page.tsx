@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
 import { PLUS_PLANS } from "@/lib/data/plans";
@@ -11,8 +11,10 @@ const STEPS: Step[] = ["role", "name", "address", "plan", "wallet"];
 
 const TOPUP_OPTIONS = [200, 500, 1000];
 
-export default function OnboardingPage() {
+function OnboardingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const { update } = useSession();
   const [step, setStep] = useState<Step>("role");
   const [role, setRole] = useState<"user" | "astrologer" | null>(null);
@@ -40,8 +42,10 @@ export default function OnboardingPage() {
           walletTopupINR: finalTopup ?? 0,
         }),
       });
-      await update({ onboarded: true, role }); // refresh the JWT without a full re-login
-      router.push("/");
+      // Refresh the JWT without a full re-login — include name so the header
+      // avatar shows initials right away instead of a "?" until next sign-in.
+      await update({ onboarded: true, role, name });
+      router.push(callbackUrl);
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -185,5 +189,13 @@ export default function OnboardingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingForm />
+    </Suspense>
   );
 }

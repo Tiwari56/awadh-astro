@@ -3,10 +3,9 @@
 import { Suspense, useEffect, useMemo, useState, FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
 import { PUJA_OFFERINGS, PUJA_ADDONS, isCityServiceable } from "@/lib/data/pujas";
-import { getWalletBalance, deductFromWallet } from "@/lib/wallet";
-import { addBooking } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { PujaOffering } from "@/types";
 
@@ -15,6 +14,7 @@ const COUNTRIES = ["India", "USA", "UK", "UAE", "Canada", "Australia", "Singapor
 function SevaPageInner() {
   const { t } = useLanguage();
   const sv = t.seva;
+  const { data: session, status: sessionStatus } = useSession();
   const searchParams = useSearchParams();
   const remedyPujaId = searchParams.get("puja"); // present when deep-linked from a kundali dosha remedy
   const [selected, setSelected] = useState<PujaOffering | null>(null);
@@ -24,6 +24,7 @@ function SevaPageInner() {
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState<{ code: string; discountINR: number } | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     devoteeName: "",
     gotra: "",
@@ -37,8 +38,9 @@ function SevaPageInner() {
   });
 
   useEffect(() => {
-    setWalletBalance(getWalletBalance());
-  }, []);
+    if (sessionStatus !== "authenticated") return;
+    fetch("/api/wallet").then((r) => r.json()).then((d) => setWalletBalance(d.balanceINR ?? 0)).catch(() => {});
+  }, [sessionStatus]);
 
   // Deep link from the kundali remedy CTA: /seva?puja=<id> auto-opens that booking form.
   useEffect(() => {
@@ -72,29 +74,42 @@ function SevaPageInner() {
     else setPromoApplied(null);
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!selected) return;
     setPaymentError(null);
-
-    if (form.mode === "online") {
-      const result = deductFromWallet(total);
-      if (!result.ok) {
-        setPaymentError(sv.insufficientBalance);
-        return;
+    setSubmitting(true);
+    try {
+      if (form.mode === "online") {
+        const res = await fetch("/api/wallet/deduct", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amountINR: total, reason: `Seva: ${selected.name}` }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setPaymentError(sv.insufficientBalance);
+          return;
+        }
+        setWalletBalance(data.balanceINR ?? 0);
       }
-      setWalletBalance(result.balance);
-    }
-    // offline mode: no charge now — cash is collected in person before the puja begins.
+      // offline mode: no charge now — cash is collected in person before the puja begins.
 
-    if (selected) {
-      addBooking({
-        pujaId: selected.id,
-        pujaName: selected.name,
-        devoteeName: form.devoteeName,
-        amountINR: total,
+      await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pujaId: selected.id,
+          pujaName: selected.name,
+          devoteeName: form.devoteeName,
+          amountINR: total,
+          mode: form.mode,
+        }),
       });
+      setBooked(true);
+    } finally {
+      setSubmitting(false);
     }
-    setBooked(true);
   }
 
   // Suggestions shown on the confirmation screen instead of a generic "book another" button.
@@ -140,6 +155,25 @@ function SevaPageInner() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Sign-in gate — booking collects devotee/address details, so it needs an account ---
+  if (selected && sessionStatus === "unauthenticated") {
+    return (
+      <div className="container section" style={{ maxWidth: 480 }}>
+        <button className="link-back" onClick={() => setSelected(null)}>← All sevas</button>
+        <div className="card auth-card">
+          <div className="auth-om">🙏</div>
+          <h2 style={{ textAlign: "center", marginBottom: 6 }}>Sign in to book {selected.name}</h2>
+          <p style={{ textAlign: "center", color: "var(--ink-soft)", fontSize: "0.9rem", marginBottom: 20 }}>
+            We need an account to confirm your sankalp, track your booking, and courier prasad to your address.
+          </p>
+          <Link href={`/login?callbackUrl=${encodeURIComponent(`/seva?puja=${selected.id}`)}`} className="btn btn-primary" style={{ width: "100%" }}>
+            Sign In to Continue
+          </Link>
         </div>
       </div>
     );
@@ -274,8 +308,8 @@ function SevaPageInner() {
           )}
           {paymentError && <p style={{ color: "var(--danger)", fontSize: "0.9rem" }}>{paymentError}</p>}
 
-          <button className="btn btn-primary" type="submit">
-            {form.mode === "online" ? sv.payNow : sv.offerSankalp}
+          <button className="btn btn-primary" type="submit" disabled={submitting}>
+            {submitting ? "…" : form.mode === "online" ? sv.payNow : sv.offerSankalp}
           </button>
           <p className="ai-disclaimer">{sv.paymentNote}</p>
         </form>

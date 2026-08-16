@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
 import NorthIndianChart from "@/components/ui/NorthIndianChart";
@@ -51,6 +52,9 @@ const TAB_LABEL_KEY: Record<Tab, keyof Dictionary["kundali"]> = {
   Basic: "tabBasic", Chart: "tabChart", Panchang: "tabPanchang", Dasha: "tabDasha",
   Doshas: "tabDoshas", Planets: "tabPlanets", Report: "tabReport",
 };
+const TAB_ICON: Record<Tab, string> = {
+  Basic: "📋", Chart: "🕉️", Panchang: "🗓️", Dasha: "🪐", Doshas: "🛡️", Planets: "✨", Report: "📄",
+};
 
 const EMPTY_FORM: BirthDetails = {
   name: "",
@@ -64,7 +68,7 @@ const EMPTY_FORM: BirthDetails = {
 export default function KundaliPage() {
   const { t, locale } = useLanguage();
   const k = t.kundali;
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   // Astrologers use the same tool as a professional working on a client's behalf —
   // same feature, third-person copy (item 8.2 of the platform brief).
   const isAstrologer = session?.user?.role === "astrologer";
@@ -155,11 +159,16 @@ export default function KundaliPage() {
         <div>
           <p className="result-name">{k.resultFor} <strong>{form.name}</strong> · {form.dateOfBirth} · {form.placeOfBirth}</p>
           {form.timeUnknown && <p className="kundali-time-note">{k.timeUnknownBanner}</p>}
+          {sessionStatus === "unauthenticated" && (
+            <p className="city-note ok" style={{ marginBottom: 14 }}>
+              💾 <Link href={`/login?callbackUrl=${encodeURIComponent("/kundali")}`}>Sign in</Link> to save this kundali to your account and view it anytime.
+            </p>
+          )}
 
           <nav className="kundali-tabs" aria-label="Kundali sections">
             {TAB_KEYS.map((tb) => (
               <button key={tb} type="button" className={`kundali-tab ${tab === tb ? "active" : ""}`} onClick={() => setTab(tb)}>
-                {k[TAB_LABEL_KEY[tb]]}
+                <span aria-hidden="true">{TAB_ICON[tb]}</span> {k[TAB_LABEL_KEY[tb]]}
               </button>
             ))}
           </nav>

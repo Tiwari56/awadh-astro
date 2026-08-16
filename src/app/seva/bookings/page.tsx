@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getBookings, BOOKING_STAGES, type Booking, type BookingStatus } from "@/lib/bookings";
+import { BOOKING_STAGES, type BookingStatus } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { Dictionary } from "@/lib/i18n/dictionary";
+
+interface Booking {
+  id: string;
+  pujaName: string;
+  devoteeName: string;
+  amountINR: number;
+  status: BookingStatus;
+  createdAt: string;
+}
 
 const STATUS_LABEL_KEY: Record<BookingStatus, keyof Dictionary["tracking"]> = {
   requested: "statusRequested",
@@ -31,9 +40,13 @@ function StatusTracker({ status, t }: { status: BookingStatus; t: Dictionary["tr
 export default function BookingsPage() {
   const { t } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setBookings(getBookings());
+    fetch("/api/bookings")
+      .then((r) => r.json())
+      .then((d) => setBookings(d.bookings ?? []))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -41,7 +54,9 @@ export default function BookingsPage() {
       <Link href="/seva" className="link-back">← {t.seva.pageTitle}</Link>
       <h2>{t.tracking.pageTitle}</h2>
 
-      {bookings.length === 0 ? (
+      {loading ? (
+        <p style={{ color: "var(--ink-soft)", padding: "20px 0" }}>Loading…</p>
+      ) : bookings.length === 0 ? (
         <p style={{ color: "var(--ink-soft)", padding: "20px 0" }}>{t.tracking.empty}</p>
       ) : (
         <div className="grid grid-2" style={{ marginTop: 20 }}>

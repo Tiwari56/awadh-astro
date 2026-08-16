@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 const PHONE_RE = /^[0-9]{10}$/;
 
 export default function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -53,7 +55,11 @@ export default function LoginForm({ googleEnabled }: { googleEnabled: boolean })
       // Fresh onboarding status lives on the session; ask the server for it.
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
-      router.push(session?.user?.onboarded ? "/" : "/onboarding");
+      if (session?.user?.onboarded) {
+        router.push(callbackUrl);
+      } else {
+        router.push(`/onboarding?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      }
       router.refresh();
     } catch {
       setError("Something went wrong — please try again");

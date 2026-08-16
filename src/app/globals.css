@@ -176,6 +176,8 @@ img { max-width: 100%; }
 .ticker-track { display: flex; animation: tickerScroll 28s linear infinite; width: max-content; white-space: nowrap; }
 .ticker-item { font-size: 0.74rem; font-weight: 600; color: var(--ink-soft); padding: 0 32px; display: flex; align-items: center; gap: 10px; }
 .ticker-item span { color: var(--gold); }
+.ticker-link { color: inherit; text-decoration: none; }
+.ticker-link:hover { color: var(--gold-bright); text-decoration: underline; }
 
 /* ---------- header ---------- */
 .site-header { position: sticky; top: 0; z-index: 50; background: linear-gradient(180deg, var(--header-bg-1) 0%, var(--header-bg-2) 100%); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top); transition: background 0.25s ease, border-color 0.25s ease; }
@@ -434,6 +436,34 @@ a.card:hover, .astro-card:hover, .puja-card:hover { transform: translateY(-4px);
 .field select option { background: var(--surface); color: var(--ink); }
 .checkbox-row { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--ink-soft); cursor: pointer; }
 .checkbox-row input { width: 18px; height: 18px; accent-color: var(--gold); }
+/* .field label{display:block;font-weight:600} above otherwise clobbers a nested
+   .checkbox-row label (e.g. the "time unknown" checkbox under Time of Birth) —
+   this re-asserts the row layout at higher specificity. */
+.field .checkbox-row,
+.field label.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 400;
+  margin-bottom: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-grad);
+  border: 1.5px solid var(--line);
+  transition: border-color 0.2s, background 0.2s;
+}
+.field .checkbox-row:hover { border-color: var(--gold-deep); }
+.field .checkbox-row input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.field .checkbox-row span { font-size: 0.88rem; line-height: 1.3; color: var(--ink-soft); }
+.field .checkbox-row:has(input:checked) { border-color: var(--gold); background: rgba(224, 166, 58, 0.1); }
+.field .checkbox-row:has(input:checked) span { color: var(--ink); }
 
 /* ---------- place autocomplete ---------- */
 .place-autocomplete { position: relative; }
@@ -773,9 +803,9 @@ table.planets tr:nth-child(even) td, table.planets-table tr:nth-child(even) td {
    ============================================================ */
 .kundali-tabs { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
 .kundali-tabs::-webkit-scrollbar { display: none; }
-.kundali-tab { flex-shrink: 0; padding: 10px 18px; border-radius: 999px 999px 0 0; border: none; background: transparent; color: var(--ink-soft); font-size: 0.88rem; font-weight: 600; cursor: pointer; position: relative; transition: color 0.2s; }
-.kundali-tab:hover { color: var(--ink); }
-.kundali-tab.active { color: var(--gold-bright); }
+.kundali-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 999px 999px 0 0; border: none; background: transparent; color: var(--ink-soft); font-size: 0.88rem; font-weight: 600; cursor: pointer; position: relative; transition: color 0.2s, background 0.2s; }
+.kundali-tab:hover { color: var(--ink); background: rgba(224, 166, 58, 0.06); }
+.kundali-tab.active { color: var(--gold-bright); background: rgba(224, 166, 58, 0.1); }
 .kundali-tab.active::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -1px; height: 2px; background: var(--gold); border-radius: 2px 2px 0 0; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; animation: fadeUp 0.35s var(--ease-out) both; }

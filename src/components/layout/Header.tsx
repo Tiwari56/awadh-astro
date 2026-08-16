@@ -8,12 +8,12 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const tickerItems = [
-  "🎉 First consultation FREE — Use code AWADH1ST",
-  "✨ 48,726+ Verified Ayodhya Pandits",
-  "🔱 Live Pujas from Hanuman Garhi & Ram Ki Paidi",
-  "⭐ Rated 4.8/5 by 9.5 Crore users",
-  "🪔 Prasad delivered to your door",
+const tickerItems: { text: string; href?: string }[] = [
+  { text: "🎉 First consultation FREE — Use code AWADH1ST", href: "/astrologers" },
+  { text: "✨ 48,726+ Verified Ayodhya Pandits" },
+  { text: "🔱 Live Pujas from Hanuman Garhi & Ram Ki Paidi" },
+  { text: "⭐ Rated 4.8/5 by 9.5 Crore users" },
+  { text: "🪔 Prasad delivered to your door" },
 ];
 
 export default function Header() {
@@ -63,7 +63,7 @@ export default function Header() {
         <div className="ticker-track">
           {[...tickerItems, ...tickerItems].map((tItem, i) => (
             <div key={i} className="ticker-item">
-              {tItem}
+              {tItem.href ? <Link href={tItem.href} className="ticker-link">{tItem.text}</Link> : tItem.text}
               <span>·</span>
             </div>
           ))}
@@ -136,7 +136,7 @@ export default function Header() {
               <>
                 {balance !== null && <div className="header-balance">₹&nbsp;{balance.toLocaleString("en-IN")}</div>}
                 <Link href="/account" className="header-avatar" aria-label="My Account">
-                  {(session.user.name ?? "?")[0].toUpperCase()}
+                  {(session.user.name || session.user.phone || "U").replace(/^\+?91/, "")[0].toUpperCase()}
                 </Link>
               </>
             ) : (

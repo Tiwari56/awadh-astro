@@ -4,17 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
+import type { BookingStatus } from "@/lib/bookings";
 
 interface Address { id: string; label: string | null; line1: string; city: string; state: string | null; pincode: string | null; isDefault: boolean; }
 interface KundaliRow { id: string; subjectName: string; dateOfBirth: string; placeOfBirth: string; createdAt: string; }
 interface AstrologerProfile { specialties: string[]; languages: string[]; experienceYears: number; ratePerMinINR: number; bio: string | null; ayodhyaVerified: boolean; commissionPercent: number; totalConsults: number; rating: number; }
+interface BookingRow { id: string; pujaName: string; devoteeName: string; amountINR: number; mode: "online" | "offline"; status: BookingStatus; createdAt: string; }
 interface Summary {
   user: { name: string | null; phone: string | null; email: string | null; role: "user" | "astrologer" | "admin"; plan: "free" | "plus" } | null;
   addresses: Address[];
   walletBalanceINR: number;
   kundalis: KundaliRow[];
   astrologerProfile: AstrologerProfile | null;
+  bookings: BookingRow[];
 }
+
+const STATUS_LABEL: Record<BookingStatus, string> = {
+  requested: "Requested", muhurat_confirmed: "Muhurat Confirmed", performed: "Performed",
+  prasad_shipped: "Prasad Shipped", delivered: "Delivered",
+};
 
 const TOPUP_OPTIONS = [200, 500, 1000];
 
@@ -193,6 +201,29 @@ export default function AccountPage() {
             {isAstrologer ? "No client kundalis fetched yet." : "No kundalis saved yet."}{" "}
             <Link href="/kundali">{isAstrologer ? "Fetch a client kundali" : "Get your free kundali"}</Link>
           </p>
+        )}
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <h3>My Bookings</h3>
+          {summary.bookings.length > 0 && <Link href="/seva/bookings" style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--gold-bright)" }}>View All →</Link>}
+        </div>
+        {summary.bookings.length > 0 ? (
+          summary.bookings.slice(0, 3).map((b) => (
+            <div key={b.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{b.pujaName}</div>
+                <div style={{ color: "var(--ink-soft)", fontSize: "0.85rem" }}>{b.devoteeName} · {new Date(b.createdAt).toLocaleDateString()}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontWeight: 600 }}>₹{b.amountINR.toLocaleString("en-IN")}</div>
+                <span className="badge badge-moderate">{STATUS_LABEL[b.status]}</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p style={{ color: "var(--ink-soft)" }}>No bookings yet. <Link href="/seva">Book a Seva</Link></p>
         )}
       </div>
 

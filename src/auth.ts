@@ -5,11 +5,12 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { eq, and, gt } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { users, accounts, sessions, verificationTokens, otpCodes } from "@/lib/db/schema";
+import { authConfig } from "@/auth.config";
 
 /**
- * Auth.js config. Session strategy MUST be "jwt" — the Credentials provider
- * (phone OTP) doesn't support database sessions. The DrizzleAdapter still
- * persists users/accounts for the Google OAuth path.
+ * Full Auth.js config — Node.js runtime only (API routes, server components).
+ * Extends authConfig (see that file for why the split exists) with the
+ * DrizzleAdapter and the DB-backed phone-OTP Credentials provider.
  *
  * Google is only registered when AUTH_GOOGLE_ID/SECRET are set, so the
  * button on /login can hide itself instead of dead-ending into an OAuth
@@ -20,12 +21,8 @@ import { users, accounts, sessions, verificationTokens, otpCodes } from "@/lib/d
 const googleConfigured = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  // Required when self-hosting (not on Vercel) — otherwise Auth.js rejects
-  // every request as an "untrusted host" in production mode.
-  trustHost: true,
+  ...authConfig,
   adapter: DrizzleAdapter(db, { usersTable: users, accountsTable: accounts, sessionsTable: sessions, verificationTokensTable: verificationTokens }),
-  session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
   providers: [
     ...(googleConfigured ? [Google] : []),
     Credentials({
@@ -60,29 +57,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
-        token.uid = user.id;
-        token.phone = (user as { phone?: string | null }).phone ?? null;
-        token.role = (user as { role?: string }).role ?? "user";
-        token.onboarded = (user as { onboarded?: boolean }).onboarded ?? false;
-      }
-      // Allows client-side session.update() (e.g. right after onboarding finishes)
-      // to refresh the token without forcing a full re-login.
-      if (trigger === "update" && session) {
-        Object.assign(token, session);
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.uid as string;
-        session.user.phone = token.phone as string | null;
-        session.user.role = token.role as "user" | "astrologer" | "admin";
-        session.user.onboarded = token.onboarded as boolean;
-      }
-      return session;
-    },
-  },
 });

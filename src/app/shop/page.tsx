@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { SPIRITUAL_PRODUCTS } from "@/lib/data/products";
 
 const CATEGORIES = [
@@ -12,10 +14,20 @@ const CATEGORIES = [
 ] as const;
 
 export default function ShopPage() {
+  const router = useRouter();
+  const { status } = useSession();
   const [category, setCategory] = useState<string>("all");
   const [added, setAdded] = useState<string | null>(null);
 
   const products = category === "all" ? SPIRITUAL_PRODUCTS : SPIRITUAL_PRODUCTS.filter((p) => p.category === category);
+
+  function onAddToCart(id: string) {
+    if (status !== "authenticated") {
+      router.push("/login?callbackUrl=/shop");
+      return;
+    }
+    setAdded(id);
+  }
 
   return (
     <div className="container section">
@@ -47,7 +59,7 @@ export default function ShopPage() {
             <p style={{ color: "var(--ink-soft)", fontSize: "0.85rem", marginBottom: 10, minHeight: 40 }}>{p.benefit}</p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontWeight: 700 }}>₹{p.priceINR.toLocaleString("en-IN")}</span>
-              <button className="btn btn-outline btn-sm" onClick={() => setAdded(p.id)}>
+              <button className="btn btn-outline btn-sm" onClick={() => onAddToCart(p.id)}>
                 {added === p.id ? "Added ✓" : "Add to Cart"}
               </button>
             </div>
