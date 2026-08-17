@@ -14,7 +14,7 @@ import type { KundaliResult } from "@/types";
  * reference real computed positions rather than invented ones.
  */
 export async function POST(req: NextRequest) {
-  const { message, history } = (await req.json()) as { message?: string; history?: ChatTurn[] };
+  const { message, history, locale } = (await req.json()) as { message?: string; history?: ChatTurn[]; locale?: string };
 
   if (!message || typeof message !== "string") {
     return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     message,
     history: Array.isArray(history) ? history : [],
     kundali,
+    locale,
   });
   return NextResponse.json(reply);
 }

@@ -75,7 +75,7 @@ function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
 }
 
 export default function ChatPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const c = t.chat;
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "welcome", role: "ai", text: c.welcome, timestamp: Date.now() },
@@ -103,7 +103,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history }),
+        body: JSON.stringify({ message: text, history, locale }),
       });
       const data = (await res.json()) as { text?: string; kind?: "text" | "upsell"; upsell?: ChatUpsellPayload; error?: string };
       const aiMsg: ChatMessage = {
