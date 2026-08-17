@@ -29,6 +29,18 @@ const NAKSHATRA_HI: Record<string, string> = {
 const PLANET_HI: Record<string, string> = {
   Sun: "सूर्य", Moon: "चंद्र", Mars: "मंगल", Mercury: "बुध", Jupiter: "गुरु",
   Venus: "शुक्र", Saturn: "शनि", Rahu: "राहु", Ketu: "केतु",
+  // The ascendant is listed alongside the grahas in the positions table.
+  Ascendant: "लग्न",
+};
+
+/** Short glyphs for the birth chart's cramped house cells, per locale. */
+const PLANET_ABBR_EN: Record<string, string> = {
+  Sun: "Su", Moon: "Mo", Mars: "Ma", Mercury: "Me", Jupiter: "Ju",
+  Venus: "Ve", Saturn: "Sa", Rahu: "Ra", Ketu: "Ke", Ascendant: "As",
+};
+const PLANET_ABBR_HI: Record<string, string> = {
+  Sun: "सू", Moon: "चं", Mars: "मं", Mercury: "बु", Jupiter: "गु",
+  Venus: "शु", Saturn: "श", Rahu: "रा", Ketu: "के", Ascendant: "ल",
 };
 
 const TITHI_HI: Record<string, string> = {
@@ -74,10 +86,26 @@ const DIRECTION_HI: Record<string, string> = {
   West: "पश्चिम", "South-West": "दक्षिण-पश्चिम", South: "दक्षिण", "South-East": "दक्षिण-पूर्व",
 };
 
+/** Sidereal signs in zodiac order — index 0 = Mesha. Shared so the chart and the positions table agree. */
+export const SIGN_ORDER = [
+  "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)",
+  "Karka (Cancer)", "Simha (Leo)", "Kanya (Virgo)",
+  "Tula (Libra)", "Vrishchika (Scorpio)", "Dhanu (Sagittarius)",
+  "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)",
+];
+
+/** Zero-based index of a "Sanskrit (English)" sign label, or null. */
+export function signIndex(label: string): number | null {
+  const i = SIGN_ORDER.indexOf(label);
+  return i >= 0 ? i : null;
+}
+
 export const vedic = {
   rashi: (v: string) => tr(RASHI_HI, v),
   nakshatra: (v: string) => tr(NAKSHATRA_HI, v),
   planet: (v: string) => tr(PLANET_HI, v),
+  planetAbbr: (v: string, hi: boolean) =>
+    (hi ? PLANET_ABBR_HI : PLANET_ABBR_EN)[v] ?? v.slice(0, 2),
   tithi: (v: string) => tr(TITHI_HI, v),
   vara: (v: string) => tr(VARA_HI, v),
   karana: (v: string) => tr(KARANA_HI, v),

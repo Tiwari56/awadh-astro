@@ -192,7 +192,12 @@ img { max-width: 100%; }
 .nav a:hover, .nav a.active { color: var(--gold-bright); background: rgba(224, 166, 58, 0.12); }
 .nav-dropdown-wrap { position: relative; }
 .nav-dropdown { position: absolute; top: calc(100% + 10px); left: 0; background: var(--dropdown-bg); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 16px; padding: 8px; min-width: 220px; box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-8px); transition: all 0.3s var(--ease-out); z-index: 200; }
-.nav-dropdown-wrap:hover .nav-dropdown { opacity: 1; visibility: visible; pointer-events: all; transform: translateY(0); }
+/* Bridge the 10px gap between the trigger and the panel. Without this the
+   pointer leaves .nav-dropdown-wrap while crossing the gap, the :hover state
+   drops, and the menu vanishes before it can be clicked. */
+.nav-dropdown::before { content: ""; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
+.nav-dropdown-wrap:hover .nav-dropdown,
+.nav-dropdown-wrap:focus-within .nav-dropdown { opacity: 1; visibility: visible; pointer-events: all; transform: translateY(0); }
 .nav-dropdown-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; color: var(--ink-soft); transition: all 0.2s; }
 .nav-dropdown-item:hover { background: rgba(224, 166, 58, 0.1); color: var(--gold-bright); }
 .header-cta { display: none; align-items: center; gap: 12px; }
@@ -503,6 +508,28 @@ table.planets th, table.planets-table th { background: var(--surface-2); color: 
 table.planets td, table.planets-table td { padding: 11px; border: 1px solid var(--line-soft); color: var(--ink-soft); }
 table.planets td strong, table.planets-table td strong { color: var(--ink); }
 table.planets tr:nth-child(even) td, table.planets-table tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+table.planets td.num { font-variant-numeric: tabular-nums; }
+/* Lagna is the anchor of the whole chart — give it visual primacy in the table. */
+table.planets tr.planet-row-lagna td { background: rgba(224, 166, 58, 0.12); }
+table.planets tr.planet-row-lagna td strong { color: var(--gold-bright); }
+
+/* Planetary positions: table on desktop, stacked cards on phones (an 8-column
+   table is unusable at 360px, and this audience is phone-first). */
+.planets-cards { display: grid; gap: 10px; }
+.planets-table-wide { display: none; }
+@media (min-width: 768px) {
+  .planets-table-wide { display: block; }
+  .planets-cards { display: none; }
+}
+.planet-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; display: grid; gap: 4px; }
+.planet-card-lagna { border-color: var(--gold-deep); background: rgba(224, 166, 58, 0.08); }
+.pc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pc-name { font-weight: 700; color: var(--ink); font-size: 1rem; }
+.planet-card-lagna .pc-name { color: var(--gold-bright); }
+.pc-retro { color: var(--danger); margin-left: 5px; font-size: 0.85rem; }
+.pc-house { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.pc-sign { font-size: 0.94rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pc-nak { font-size: 0.82rem; color: var(--ink-soft); }
 .yoga-card p { font-size: 0.88rem; color: var(--ink-soft); margin-top: 8px; }
 .yoga-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .yoga-name { font-weight: 700; color: var(--ink); }
@@ -757,6 +784,7 @@ table.planets tr:nth-child(even) td, table.planets-table tr:nth-child(even) td {
 .footer-social { display: flex; justify-content: center; gap: 14px; margin-bottom: 24px; }
 .footer-social a { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft); transition: all 0.2s var(--ease-out); }
 .footer-social a:hover { color: var(--gold-bright); border-color: var(--gold-deep); transform: translateY(-2px); }
+.footer-social .social-pending { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px dashed var(--line); color: var(--muted); opacity: 0.55; cursor: default; }
 
 /* ============================================================
    Responsive — desktop & up

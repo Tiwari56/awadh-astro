@@ -1,6 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
-  boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, varchar,
+  boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, varchar,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -42,7 +42,13 @@ export const users = pgTable("users", {
   plan: planEnum("plan").notNull().default("free"),
   onboarded: boolean("onboarded").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  // Admin dashboard segments users by role/plan and charts signups over time;
+  // without these every such query is a full table scan.
+  roleIdx: index("users_role_idx").on(t.role),
+  planIdx: index("users_plan_idx").on(t.plan),
+  createdAtIdx: index("users_created_at_idx").on(t.createdAt),
+}));
 
 export const accounts = pgTable(
   "accounts",
@@ -61,6 +67,7 @@ export const accounts = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
+    userIdx: index("accounts_user_idx").on(table.userId),
   })
 );
 
@@ -89,7 +96,11 @@ export const otpCodes = pgTable("otp_codes", {
   expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
   consumed: boolean("consumed").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  // Every single sign-in runs the phone+consumed+expiry lookup in authorize().
+  phoneConsumedIdx: index("otp_codes_phone_consumed_idx").on(t.phone, t.consumed),
+  expiresAtIdx: index("otp_codes_expires_at_idx").on(t.expiresAt),
+}));
 
 // --- Domain tables ---
 
@@ -113,7 +124,10 @@ export const addresses = pgTable("addresses", {
   pincode: varchar("pincode", { length: 12 }),
   isDefault: boolean("is_default").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  userIdx: index("addresses_user_idx").on(t.userId),
+  cityIdx: index("addresses_city_idx").on(t.city), // serviceability / delivery reporting
+}));
 
 export const wallets = pgTable("wallets", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
@@ -128,7 +142,10 @@ export const walletTransactions = pgTable("wallet_transactions", {
   type: walletTxnTypeEnum("type").notNull(),
   reason: text("reason").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  userCreatedIdx: index("wallet_txn_user_created_idx").on(t.userId, t.createdAt),
+  typeIdx: index("wallet_txn_type_idx").on(t.type), // revenue/credit reporting
+}));
 
 /**
  * Illustrative AstroTalk-style commission split — NOT an exact copy, just
@@ -148,7 +165,12 @@ export const astrologerProfiles = pgTable("astrologer_profiles", {
   commissionPercent: integer("commission_percent").notNull().default(30), // platform's cut
   totalConsults: integer("total_consults").notNull().default(0),
   rating: integer("rating_x10").notNull().default(0), // stored as rating*10 to avoid float column
-});
+}, (t) => ({
+  // Astrologer directory filters on availability and sorts by rating.
+  statusIdx: index("astrologer_status_idx").on(t.status),
+  ratingIdx: index("astrologer_rating_idx").on(t.rating),
+  verifiedIdx: index("astrologer_verified_idx").on(t.ayodhyaVerified),
+}));
 
 export const kundaliRecords = pgTable("kundali_records", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -160,7 +182,10 @@ export const kundaliRecords = pgTable("kundali_records", {
   placeOfBirth: text("place_of_birth").notNull(),
   resultJson: jsonb("result_json").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  // Account page and chat grounding both fetch "this user's latest kundali".
+  userCreatedIdx: index("kundali_user_created_idx").on(t.userId, t.createdAt),
+}));
 
 export const bookings = pgTable("bookings", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -172,7 +197,13 @@ export const bookings = pgTable("bookings", {
   mode: bookingModeEnum("mode").notNull().default("online"),
   status: bookingStatusEnum("status").notNull().default("muhurat_confirmed"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  userCreatedIdx: index("bookings_user_created_idx").on(t.userId, t.createdAt),
+  // Admin dashboard: fulfilment queue by stage, revenue by puja, volume over time.
+  statusIdx: index("bookings_status_idx").on(t.status),
+  pujaIdx: index("bookings_puja_idx").on(t.pujaId),
+  createdAtIdx: index("bookings_created_at_idx").on(t.createdAt),
+}));
 
 // --- Relations (for query ergonomics) ---
 

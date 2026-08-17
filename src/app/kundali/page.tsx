@@ -8,7 +8,7 @@ import NorthIndianChart from "@/components/ui/NorthIndianChart";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { vedic } from "@/lib/i18n/vedic-terms";
 import type { Dictionary } from "@/lib/i18n/dictionary";
-import type { BirthDetails, DoshaSummary, KundaliResult } from "@/types";
+import type { BirthDetails, DoshaSummary, KundaliResult, PlanetPosition } from "@/types";
 
 function DoshaCard({ title, dosha, t }: { title: string; dosha: DoshaSummary; t: Dictionary["kundali"] }) {
   return (
@@ -46,14 +46,75 @@ function RemedyCta({ dosha, remedyKey, t }: { dosha: DoshaSummary; remedyKey: ke
   );
 }
 
-const TAB_KEYS = ["Basic", "Chart", "Panchang", "Dasha", "Doshas", "Planets", "Report"] as const;
+/**
+ * Planetary positions. Renders as a table on wide screens and as stacked
+ * cards on phones — an 8-column table is unreadable at 360px, and phones are
+ * the primary device for this audience.
+ */
+function PlanetsTable({
+  planets, k, hi, rashi, nak, planet,
+}: {
+  planets: PlanetPosition[];
+  k: Dictionary["kundali"];
+  hi: boolean;
+  rashi: (v: string) => string;
+  nak: (v: string) => string;
+  planet: (v: string) => string;
+}) {
+  const isLagna = (p: PlanetPosition) => p.planet.toLowerCase() === "ascendant";
+  return (
+    <>
+      <div className="card table-wrap planets-table-wide">
+        <table className="planets">
+          <thead>
+            <tr>
+              <th>{k.planetCol}</th><th>{k.signCol}</th><th>{k.houseCol}</th><th>{k.degreeCol}</th>
+              <th>{k.nakshatraCol}</th><th>{k.padaCol}</th><th>{k.retroCol}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {planets.map((p) => (
+              <tr key={p.planet} className={isLagna(p) ? "planet-row-lagna" : ""}>
+                <td><strong>{planet(p.planet)}</strong></td>
+                <td>{rashi(p.sign)}</td>
+                <td>{p.house || "—"}</td>
+                <td className="num">{p.degree}°</td>
+                <td>{nak(p.nakshatra)}</td>
+                <td className="num">{p.pada || "—"}</td>
+                <td>{p.retrograde ? "℞" : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="planets-cards">
+        {planets.map((p) => (
+          <div key={p.planet} className={`planet-card${isLagna(p) ? " planet-card-lagna" : ""}`}>
+            <div className="pc-head">
+              <span className="pc-name">
+                {planet(p.planet)}
+                {p.retrograde && <span className="pc-retro" title="Retrograde">℞</span>}
+              </span>
+              <span className="pc-house">{k.houseCol} {p.house || "—"}</span>
+            </div>
+            <div className="pc-sign">{rashi(p.sign)} · {p.degree}°</div>
+            <div className="pc-nak">{k.nakshatraCol}: {nak(p.nakshatra)}{p.pada ? ` (${k.padaCol} ${p.pada})` : ""}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+const TAB_KEYS = ["Basic", "Chart", "Panchang", "Dasha", "Doshas", "Report"] as const;
 type Tab = (typeof TAB_KEYS)[number];
 const TAB_LABEL_KEY: Record<Tab, keyof Dictionary["kundali"]> = {
   Basic: "tabBasic", Chart: "tabChart", Panchang: "tabPanchang", Dasha: "tabDasha",
-  Doshas: "tabDoshas", Planets: "tabPlanets", Report: "tabReport",
+  Doshas: "tabDoshas", Report: "tabReport",
 };
 const TAB_ICON: Record<Tab, string> = {
-  Basic: "📋", Chart: "🕉️", Panchang: "🗓️", Dasha: "🪐", Doshas: "🛡️", Planets: "✨", Report: "📄",
+  Basic: "📋", Chart: "🕉️", Panchang: "🗓️", Dasha: "🪐", Doshas: "🛡️", Report: "📄",
 };
 
 const EMPTY_FORM: BirthDetails = {
@@ -194,13 +255,16 @@ export default function KundaliPage() {
             <p className="insight">“{result.dailyInsight}”</p>
           </div>
 
-          {/* Chart */}
+          {/* Chart + the positions table it's drawn from, together so the two can be read against each other */}
           <div className={`tab-panel ${tab === "Chart" ? "active" : ""}`}>
             <h3 className="kundali-section-title">🕉️ {k.chartTitle}</h3>
             <div className="card chart-wrap">
-              <NorthIndianChart ascendant={result.ascendant} planets={result.planets} />
+              <NorthIndianChart ascendant={result.ascendant} planets={result.planets} hi={hi} />
             </div>
             <p className="kundali-disclaimer" style={{ textAlign: "center" }}>{k.chartNote}</p>
+
+            <h3 className="kundali-section-title" style={{ marginTop: 28 }}>✨ {k.planetsTitle}</h3>
+            <PlanetsTable planets={result.planets} k={k} hi={hi} rashi={rashi} nak={nak} planet={planet} />
           </div>
 
           {/* Panchang */}
@@ -270,34 +334,6 @@ export default function KundaliPage() {
           </div>
 
           {/* Planets */}
-          <div className={`tab-panel ${tab === "Planets" ? "active" : ""}`}>
-            <h3 className="kundali-section-title">✨ {k.planetsTitle}</h3>
-            <div className="card table-wrap">
-              <table className="planets">
-                <thead>
-                  <tr>
-                    <th>{k.planetCol}</th><th>{k.signCol}</th><th>{k.houseCol}</th><th>{k.degreeCol}</th>
-                    <th>{k.nakshatraCol}</th><th>{k.padaCol}</th><th>{k.dignityCol}</th><th>{k.retroCol}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.planets.map((p) => (
-                    <tr key={p.planet}>
-                      <td><strong>{planet(p.planet)}</strong></td>
-                      <td>{rashi(p.sign)}</td>
-                      <td>{p.house}</td>
-                      <td>{p.degree}°</td>
-                      <td>{nak(p.nakshatra)}</td>
-                      <td>{p.pada || "—"}</td>
-                      <td>{hi ? vedic.dignity(p.dignity) : p.dignity}</td>
-                      <td>{p.retrograde ? "℞" : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           {/* Report / download */}
           <div className={`tab-panel ${tab === "Report" ? "active" : ""}`}>
             <div className="card report-cover">
