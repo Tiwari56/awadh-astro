@@ -45,13 +45,17 @@ export default function Header() {
       dropdown: [
         { label: t.nav.freeKundali, href: "/kundali" },
         { label: t.nav.kundaliMatching, href: "/match" },
+        { label: "Panchang Calendar", href: "/panchang" },
         { label: t.nav.aiChat, href: "/chat" },
       ],
     },
     {
       label: t.nav.horoscope,
       href: "/kundali",
-      dropdown: [{ label: t.nav.dailyHoroscope, href: "/kundali" }],
+      dropdown: [
+        { label: t.nav.dailyHoroscope, href: "/kundali" },
+        { label: "Panchang Calendar", href: "/panchang" },
+      ],
     },
     { label: t.nav.plus, href: "/plus" },
   ];

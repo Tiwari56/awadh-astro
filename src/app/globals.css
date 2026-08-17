@@ -1176,3 +1176,33 @@ p { text-wrap: pretty; }
 .kc-more summary::before { content: "▸ "; }
 .kc-more[open] summary::before { content: "▾ "; }
 .kc-more p { font-size: var(--fs-xs); color: var(--muted); line-height: 1.5; margin: 7px 0 0; }
+
+/* ---------- Panchang calendar ---------- */
+.cal-card { margin-bottom: var(--sp-5); }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--sp-4); }
+.cal-title { font-family: var(--font-display-stack); font-size: var(--fs-lg); color: var(--ink); }
+.cal-nav { width: var(--tap); height: var(--tap); border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface); color: var(--gold-bright); font-size: 1.3rem; line-height: 1; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s; }
+.cal-nav:hover { border-color: var(--gold); background: rgba(224,166,58,0.1); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-weekdays { margin-bottom: 6px; }
+.cal-wd { text-align: center; font-size: var(--fs-xs); font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 0; }
+.cal-cell { aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px;
+  border: 1px solid transparent; background: transparent; color: var(--ink-soft);
+  font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s var(--ease-spring); }
+.cal-cell:hover { background: var(--surface-2); color: var(--ink); }
+.cal-cell.is-today { border-color: var(--gold-deep); color: var(--gold-bright); }
+.cal-cell.is-selected { background: linear-gradient(140deg, var(--gold-bright), var(--gold-deep));
+  color: #231206; border-color: transparent; transform: scale(1.04); box-shadow: var(--shadow-glow); }
+.cal-blank { cursor: default; }
+
+.pan-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.pan-detail-head h3 { font-size: var(--fs-lg); margin: 0; }
+.pan-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+@media (min-width: 640px) { .pan-grid { grid-template-columns: repeat(4, 1fr); } }
+.pan-grid .stat-v2 { gap: 4px; }
+.pan-v { font-size: var(--fs-base) !important; font-family: var(--font-display-stack); }
+.pan-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: var(--sp-5); }
