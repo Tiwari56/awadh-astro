@@ -11,3 +11,4 @@ next-env.d.ts
 # Confidential / working docs — keep out of the repo
 docs/
 desgin/
+.vercel
