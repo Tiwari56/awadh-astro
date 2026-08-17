@@ -18,7 +18,8 @@ export const authConfig = {
       if (user) {
         token.uid = user.id;
         token.phone = (user as { phone?: string | null }).phone ?? null;
-        token.role = (user as { role?: string }).role ?? "user";
+        token.role = (user as { role?: string }).role as "user" | "astrologer" | "admin" ?? "user";
+        token.plan = (user as { plan?: string }).plan as "free" | "plus" ?? "free";
         token.onboarded = (user as { onboarded?: boolean }).onboarded ?? false;
       }
       // Allows client-side session.update() (e.g. right after onboarding finishes)
@@ -33,6 +34,7 @@ export const authConfig = {
         session.user.id = token.uid as string;
         session.user.phone = token.phone as string | null;
         session.user.role = token.role as "user" | "astrologer" | "admin";
+        session.user.plan = (token.plan as "free" | "plus") ?? "free";
         session.user.onboarded = token.onboarded as boolean;
       }
       return session;

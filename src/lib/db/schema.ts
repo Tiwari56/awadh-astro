@@ -25,6 +25,11 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "requested", "muhurat_confirmed", "performed", "prasad_shipped", "delivered",
 ]);
 export const bookingModeEnum = pgEnum("booking_mode", ["online", "offline"]);
+/** How the puja is witnessed — distinct from how it's paid for. */
+export const attendanceEnum = pgEnum("attendance_mode", ["online", "in_person"]);
+/** Who the puja is performed for. */
+export const bookingForEnum = pgEnum("booking_for", ["self", "family"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "cash"]);
 export const walletTxnTypeEnum = pgEnum("wallet_txn_type", ["credit", "debit"]);
 export const otpChannelEnum = pgEnum("otp_channel", ["sms", "email"]);
 
@@ -202,7 +207,19 @@ export const bookings = pgTable("bookings", {
   pujaName: text("puja_name").notNull(),
   devoteeName: text("devotee_name").notNull(),
   amountINR: integer("amount_inr").notNull(),
+  /** Legacy combined field, kept so old rows still read. New writes set the
+   *  three explicit columns below instead. */
   mode: bookingModeEnum("mode").notNull().default("online"),
+  /** Live stream vs somebody physically attending at the Ayodhya temple. */
+  attendance: attendanceEnum("attendance").notNull().default("online"),
+  bookingFor: bookingForEnum("booking_for").notNull().default("self"),
+  /** Name of the family member the puja is for, when bookingFor = "family". */
+  beneficiaryName: text("beneficiary_name"),
+  /** Live stream link — only meaningful when attendance = "online". */
+  wantsLiveStream: boolean("wants_live_stream").notNull().default(false),
+  /** HD recording delivered afterwards; always goes to the account holder. */
+  wantsRecording: boolean("wants_recording").notNull().default(false),
+  paymentMethod: paymentMethodEnum("payment_method").notNull().default("wallet"),
   status: bookingStatusEnum("status").notNull().default("muhurat_confirmed"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 }, (t) => ({

@@ -52,7 +52,7 @@ function OnboardingForm() {
       });
       // Refresh the JWT without a full re-login — include name so the header
       // avatar shows initials right away instead of a "?" until next sign-in.
-      await update({ onboarded: true, role, name });
+      await update({ onboarded: true, role, name, plan });
       router.push(callbackUrl);
       router.refresh();
     } finally {

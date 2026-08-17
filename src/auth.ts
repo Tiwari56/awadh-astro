@@ -70,7 +70,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           await db.update(users).set({ emailVerified: new Date() }).where(eq(users.id, user.id));
         }
 
-        return { id: user.id, phone: user.phone, email: user.email, role: user.role, name: user.name, onboarded: user.onboarded };
+        return { id: user.id, phone: user.phone, email: user.email, role: user.role, plan: user.plan, name: user.name, onboarded: user.onboarded };
       },
     }),
   ],

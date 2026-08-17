@@ -33,8 +33,15 @@ function SevaPageInner() {
     city: "",
     shippingCountry: "India",
     shippingAddress: "",
-    wantsLiveVideo: true,
-    mode: "online" as "online" | "offline",
+    // How the puja is witnessed — separate from how it's paid for. These were
+    // previously one "mode" field, which made "In-Person" silently also mean
+    // "pay cash" and left live-stream/recording options unmanaged.
+    attendance: "online" as "online" | "in_person",
+    bookingFor: "self" as "self" | "family",
+    beneficiaryName: "",
+    wantsLiveStream: true,
+    wantsRecording: false,
+    paymentMethod: "wallet" as "wallet" | "cash",
   });
 
   useEffect(() => {
@@ -56,10 +63,14 @@ function SevaPageInner() {
   const toggleAddon = (id: string) =>
     setAddonIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  const isPlus = session?.user?.plan === "plus";
   const cityServiceable = isCityServiceable(form.city);
+  /** Plus includes HD recording; everyone else pays the add-on price. */
+  const RECORDING_PRICE = 299;
+  const recordingCost = form.wantsRecording && !isPlus ? RECORDING_PRICE : 0;
   const selectedAddons = useMemo(() => PUJA_ADDONS.filter((a) => addonIds.includes(a.id)), [addonIds]);
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.priceINR, 0);
-  const subtotal = (selected?.priceINR ?? 0) + addonsTotal;
+  const subtotal = (selected?.priceINR ?? 0) + addonsTotal + recordingCost;
   const total = Math.max(0, subtotal - (promoApplied?.discountINR ?? 0));
 
   /**
@@ -80,7 +91,7 @@ function SevaPageInner() {
     setPaymentError(null);
     setSubmitting(true);
     try {
-      if (form.mode === "online") {
+      if (form.paymentMethod === "wallet") {
         const res = await fetch("/api/wallet/deduct", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -103,7 +114,12 @@ function SevaPageInner() {
           pujaName: selected.name,
           devoteeName: form.devoteeName,
           amountINR: total,
-          mode: form.mode,
+          attendance: form.attendance,
+          bookingFor: form.bookingFor,
+          beneficiaryName: form.beneficiaryName,
+          wantsLiveStream: form.wantsLiveStream,
+          wantsRecording: form.wantsRecording || isPlus,
+          paymentMethod: form.paymentMethod,
         }),
       });
       setBooked(true);
@@ -127,17 +143,21 @@ function SevaPageInner() {
           <h2>Sankalp Received</h2>
           <p>
             Your <strong>{selected.name}</strong> at <strong>{selected.temple}</strong> has been
-            requested in the name of <strong>{form.devoteeName}</strong>
+            requested in the name of <strong>{form.bookingFor === "family" && form.beneficiaryName ? form.beneficiaryName : form.devoteeName}</strong>
             {form.gotra ? ` (${form.gotra} gotra)` : ""}.
             {selectedAddons.length > 0 && ` Add-ons: ${selectedAddons.map((a) => a.label).join(", ")}.`}
           </p>
           <p className="confirm-note">
-            Our team will compute the auspicious muhurat from the sankalp and confirm your date &amp;
-            {form.wantsLiveVideo ? " live video link" : " recording"} on WhatsApp.
-            {form.mode === "online" ? " Payment has been deducted from your wallet." : " Please keep cash ready before the puja begins."}
+            Our team will compute the auspicious muhurat and confirm the date with you.
+            {form.attendance === "online" && form.wantsLiveStream && " Your live stream link will arrive before the muhurat."}
+            {(form.wantsRecording || isPlus) && " The HD recording will be delivered to your account afterwards."}
+            {form.attendance === "in_person" && (form.bookingFor === "family"
+              ? " Your family should reach the temple 30 minutes before the muhurat."
+              : " Please reach the temple 30 minutes before the muhurat.")}
+            {form.paymentMethod === "wallet" ? " Payment has been deducted from your wallet." : " Please keep cash ready before the puja begins."}
             {" "}Prasad will be couriered to {form.shippingCountry}.
           </p>
-          <p className="confirm-amount">{form.mode === "online" ? "Amount paid" : "Amount due (cash)"}: ₹{total.toLocaleString("en-IN")}</p>
+          <p className="confirm-amount">{form.paymentMethod === "wallet" ? "Amount paid" : "Amount due (cash)"}: ₹{total.toLocaleString("en-IN")}</p>
 
           <Link href="/seva/bookings" className="btn btn-outline" style={{ marginBottom: 20 }}>
             {sv.viewMyBookings}
@@ -254,11 +274,6 @@ function SevaPageInner() {
             <input id="pd" type="date" value={form.preferredDate}
               onChange={(e) => set("preferredDate", e.target.value)} />
           </div>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={form.wantsLiveVideo}
-              onChange={(e) => set("wantsLiveVideo", e.target.checked)} />
-            <span>{sv.liveStream}</span>
-          </label>
 
           {/* Promo code — dummy for now; real rate-based promotions arrive with
               phone-OTP account management. */}
@@ -272,17 +287,126 @@ function SevaPageInner() {
             {promoApplied && <p className="city-note ok">✓ {promoApplied.code} applied — ₹{promoApplied.discountINR} off</p>}
           </div>
 
-          {/* Puja mode: online (prepaid via wallet) vs offline (cash before the ritual). */}
-          <div className="field">
-            <label>{sv.modeLabel}</label>
-            <div className="mode-toggle">
-              <button type="button" className={`mode-btn ${form.mode === "online" ? "active" : ""}`} onClick={() => set("mode", "online")}>
-                💻 {sv.modeOnline}
+          {/* ── Who the puja is for ───────────────────────────── */}
+          <div className="field-v2">
+            <label>Who is this puja for?</label>
+            <div className="ob-choices">
+              <button type="button" aria-pressed={form.bookingFor === "self"} className="opt-card"
+                onClick={() => set("bookingFor", "self")}>
+                <span className="opt-check">✓</span>
+                <span className="opt-ic" aria-hidden="true">🙏</span>
+                <span className="opt-body">
+                  <span className="opt-title">Myself</span>
+                  <span className="opt-desc">The sankalp is taken in my name</span>
+                </span>
               </button>
-              <button type="button" className={`mode-btn ${form.mode === "offline" ? "active" : ""}`} onClick={() => set("mode", "offline")}>
-                🛕 {sv.modeOffline}
+              <button type="button" aria-pressed={form.bookingFor === "family"} className="opt-card"
+                onClick={() => set("bookingFor", "family")}>
+                <span className="opt-check">✓</span>
+                <span className="opt-ic" aria-hidden="true">👨‍👩‍👧</span>
+                <span className="opt-body">
+                  <span className="opt-title">A family member</span>
+                  <span className="opt-desc">I&apos;m booking on their behalf — recording and updates still come to me</span>
+                </span>
               </button>
             </div>
+          </div>
+
+          {form.bookingFor === "family" && (
+            <div className="field-v2">
+              <label htmlFor="benef">Family member&apos;s name (for the sankalp)</label>
+              <input id="benef" className="input-v2" required value={form.beneficiaryName}
+                placeholder="e.g. Ramesh Tiwari"
+                onChange={(e) => set("beneficiaryName", e.target.value)} />
+              <span className="hint">
+                The pandit takes the sankalp in their name. Your booking updates, recording and prasad
+                tracking stay on your account.
+              </span>
+            </div>
+          )}
+
+          {/* ── How it's witnessed (NOT how it's paid for) ─────── */}
+          <div className="field-v2">
+            <label>How would you like to attend?</label>
+            <div className="ob-choices">
+              <button type="button" aria-pressed={form.attendance === "online"} className="opt-card"
+                onClick={() => set("attendance", "online")}>
+                <span className="opt-check">✓</span>
+                <span className="opt-ic" aria-hidden="true">💻</span>
+                <span className="opt-body">
+                  <span className="opt-title">Online</span>
+                  <span className="opt-desc">Watch from anywhere — live stream link sent before the muhurat</span>
+                </span>
+              </button>
+              <button type="button" aria-pressed={form.attendance === "in_person"} className="opt-card"
+                onClick={() => { set("attendance", "in_person"); set("wantsLiveStream", false); }}>
+                <span className="opt-check">✓</span>
+                <span className="opt-ic" aria-hidden="true">🛕</span>
+                <span className="opt-body">
+                  <span className="opt-title">In person at the temple</span>
+                  <span className="opt-desc">
+                    {form.bookingFor === "family"
+                      ? "Your family attends at Ayodhya in person"
+                      : "I'll attend at Ayodhya myself"}
+                  </span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── Video options, gated on attendance ─────────────── */}
+          <div className="field-v2">
+            <label>Video</label>
+            <div style={{ display: "grid", gap: 8 }}>
+              {form.attendance === "online" ? (
+                <label className="check-v2">
+                  <input type="checkbox" checked={form.wantsLiveStream}
+                    onChange={(e) => set("wantsLiveStream", e.target.checked)} />
+                  <span className="box" aria-hidden="true" />
+                  <span className="check-text">
+                    <strong>Live stream link</strong> — watch the puja as it happens. Free.
+                  </span>
+                </label>
+              ) : (
+                <p className="hint">
+                  Live streaming needs an online sitting. Choose <strong>Online</strong> above if you want to
+                  watch it happen — or take the recording below instead.
+                </p>
+              )}
+
+              <label className="check-v2">
+                <input type="checkbox" checked={form.wantsRecording || isPlus} disabled={isPlus}
+                  onChange={(e) => set("wantsRecording", e.target.checked)} />
+                <span className="box" aria-hidden="true" />
+                <span className="check-text">
+                  <strong>HD recording + photo album</strong> — delivered to your account after the puja.{" "}
+                  {isPlus
+                    ? <em>Included free with Awadh Plus ✦</em>
+                    : <>₹{RECORDING_PRICE} · <Link href="/plus">free on Awadh Plus</Link></>}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* ── Payment ───────────────────────────────────────── */}
+          <div className="field-v2">
+            <label>Payment</label>
+            <div className="segmented">
+              <button type="button" aria-pressed={form.paymentMethod === "wallet"}
+                onClick={() => set("paymentMethod", "wallet")}>
+                Pay from wallet
+              </button>
+              <button type="button" aria-pressed={form.paymentMethod === "cash"}
+                onClick={() => set("paymentMethod", "cash")}>
+                Cash at temple
+              </button>
+            </div>
+            {form.paymentMethod === "cash" && form.attendance === "online" && (
+              <span className="hint">
+                Cash is collected at the temple before the puja begins — someone needs to be present.
+                For a fully remote booking, pay from your wallet instead.
+              </span>
+            )}
           </div>
 
           {selectedAddons.length > 0 && (
@@ -291,6 +415,9 @@ function SevaPageInner() {
               {selectedAddons.map((a) => (
                 <div className="cart-row" key={a.id}><span>+ {a.label}</span><span>₹{a.priceINR.toLocaleString("en-IN")}</span></div>
               ))}
+              {recordingCost > 0 && (
+                <div className="cart-row"><span>+ HD recording</span><span>₹{recordingCost}</span></div>
+              )}
               {promoApplied && <div className="cart-row"><span>− {promoApplied.code}</span><span>−₹{promoApplied.discountINR}</span></div>}
             </div>
           )}
@@ -299,9 +426,12 @@ function SevaPageInner() {
             <strong>₹{total.toLocaleString("en-IN")}</strong>
           </div>
 
-          {form.mode === "online" ? (
+          {form.paymentMethod === "wallet" ? (
             <p className="wallet-balance-row">
               <span>{sv.walletBalance}: ₹{walletBalance.toLocaleString("en-IN")}</span>
+              {walletBalance < total && (
+                <Link href="/account" className="acct-link">Add money →</Link>
+              )}
             </p>
           ) : (
             <p className="opt">{sv.payCash}</p>
@@ -309,7 +439,7 @@ function SevaPageInner() {
           {paymentError && <p style={{ color: "var(--danger)", fontSize: "0.9rem" }}>{paymentError}</p>}
 
           <button className="btn btn-primary" type="submit" disabled={submitting}>
-            {submitting ? "…" : form.mode === "online" ? sv.payNow : sv.offerSankalp}
+            {submitting ? "…" : form.paymentMethod === "wallet" ? sv.payNow : sv.offerSankalp}
           </button>
           <p className="ai-disclaimer">{sv.paymentNote}</p>
         </form>
