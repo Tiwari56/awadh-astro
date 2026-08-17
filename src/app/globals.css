@@ -473,7 +473,8 @@ a.card:hover, .astro-card:hover, .puja-card:hover { transform: translateY(-4px);
 .field .checkbox-row:has(input:checked) span { color: var(--ink); }
 
 /* ---------- place autocomplete ---------- */
-.place-autocomplete { position: relative; }
+.place-autocomplete { position: relative; width: 100%; }
+.place-autocomplete > input { width: 100%; }
 .place-suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50; background: var(--dropdown-bg); backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: 12px; padding: 6px; max-height: 240px; overflow-y: auto; box-shadow: var(--shadow-md); }
 .place-suggestion { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; border: none; background: transparent; color: var(--ink-soft); font-size: 0.88rem; cursor: pointer; }
 .place-suggestion:hover { background: rgba(224, 166, 58, 0.1); color: var(--ink); }

@@ -26,6 +26,7 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 ]);
 export const bookingModeEnum = pgEnum("booking_mode", ["online", "offline"]);
 export const walletTxnTypeEnum = pgEnum("wallet_txn_type", ["credit", "debit"]);
+export const otpChannelEnum = pgEnum("otp_channel", ["sms", "email"]);
 
 // --- Auth.js-required tables (DrizzleAdapter shape), extended with our columns ---
 
@@ -89,17 +90,24 @@ export const verificationTokens = pgTable(
 
 // --- Phone OTP (separate from Auth.js's email-shaped verificationTokens) ---
 
+/**
+ * One-time login codes. `identifier` is the phone number OR the email
+ * address depending on `channel` — both login routes share one table so the
+ * expiry/consumption/rate-limit logic lives in exactly one place.
+ */
 export const otpCodes = pgTable("otp_codes", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
-  phone: varchar("phone", { length: 20 }).notNull(),
+  identifier: text("identifier").notNull(),
+  channel: otpChannelEnum("channel").notNull().default("sms"),
   code: varchar("code", { length: 6 }).notNull(),
   expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
   consumed: boolean("consumed").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 }, (t) => ({
-  // Every single sign-in runs the phone+consumed+expiry lookup in authorize().
-  phoneConsumedIdx: index("otp_codes_phone_consumed_idx").on(t.phone, t.consumed),
+  // Every single sign-in runs the identifier+consumed+expiry lookup in authorize().
+  identifierConsumedIdx: index("otp_codes_identifier_consumed_idx").on(t.identifier, t.consumed),
   expiresAtIdx: index("otp_codes_expires_at_idx").on(t.expiresAt),
+  createdAtIdx: index("otp_codes_created_at_idx").on(t.createdAt), // rate limiting
 }));
 
 // --- Domain tables ---

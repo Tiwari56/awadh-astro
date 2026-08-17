@@ -5,22 +5,35 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 const PHONE_RE = /^[0-9]{10}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type Channel = "sms" | "email";
 
 export default function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [step, setStep] = useState<"identify" | "otp">("identify");
+  const [channel, setChannel] = useState<Channel>("sms");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [delivered, setDelivered] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** The value actually verified — a full phone number or an email address. */
+  const identifier = channel === "email" ? email.trim().toLowerCase() : `+91${phone}`;
+  const identifierLabel = channel === "email" ? email.trim().toLowerCase() : `+91 ${phone}`;
+
   async function requestOtp(e: FormEvent) {
     e.preventDefault();
-    if (!PHONE_RE.test(phone)) {
+    if (channel === "sms" && !PHONE_RE.test(phone)) {
       setError("Enter a 10-digit mobile number");
+      return;
+    }
+    if (channel === "email" && !EMAIL_RE.test(email.trim())) {
+      setError("Enter a valid email address");
       return;
     }
     setError(null);
@@ -29,11 +42,12 @@ export default function LoginForm({ googleEnabled }: { googleEnabled: boolean })
       const res = await fetch("/api/auth/otp/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: `+91${phone}` }),
+        body: JSON.stringify(channel === "email" ? { email: identifier } : { phone: identifier }),
       });
-      const data = (await res.json()) as { ok?: boolean; devCode?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Could not send OTP");
+      const data = (await res.json()) as { ok?: boolean; devCode?: string; delivered?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Could not send code");
       setDevCode(data.devCode ?? null);
+      setDelivered(Boolean(data.delivered));
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -47,7 +61,7 @@ export default function LoginForm({ googleEnabled }: { googleEnabled: boolean })
     setError(null);
     setLoading(true);
     try {
-      const res = await signIn("phone-otp", { phone: `+91${phone}`, code, redirect: false });
+      const res = await signIn("phone-otp", { identifier, channel, code, redirect: false });
       if (res?.error) {
         setError("Incorrect or expired code — please try again");
         return;
@@ -77,36 +91,66 @@ export default function LoginForm({ googleEnabled }: { googleEnabled: boolean })
           Sign in to save your kundali, book sevas, and get personalized guidance.
         </p>
 
-        {step === "phone" && (
+        {step === "identify" && (
           <form onSubmit={requestOtp} className="form">
-            <div className="field">
-              <label htmlFor="phone">Mobile Number</label>
-              <div className="phone-input-row">
-                <span className="phone-prefix">🇮🇳 +91</span>
+            <div className="segmented" style={{ marginBottom: 18 }}>
+              <button type="button" aria-pressed={channel === "sms"} onClick={() => { setChannel("sms"); setError(null); }}>
+                📱 Mobile
+              </button>
+              <button type="button" aria-pressed={channel === "email"} onClick={() => { setChannel("email"); setError(null); }}>
+                ✉️ Email
+              </button>
+            </div>
+
+            {channel === "sms" ? (
+              <div className="field-v2">
+                <label htmlFor="phone">Mobile Number</label>
+                <div className="phone-input-row">
+                  <span className="phone-prefix">🇮🇳 +91</span>
+                  <input
+                    id="phone" type="tel" inputMode="numeric" required maxLength={10}
+                    className="input-v2"
+                    placeholder="98765 43210" value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="field-v2">
+                <label htmlFor="email">Email Address</label>
                 <input
-                  id="phone" type="tel" inputMode="numeric" required maxLength={10}
-                  placeholder="98765 43210" value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  id="email" type="email" inputMode="email" required autoComplete="email"
+                  className="input-v2"
+                  placeholder="you@example.com" value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-            </div>
+            )}
             {error && <p style={{ color: "var(--danger)", fontSize: "0.85rem" }}>{error}</p>}
             <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? "Sending…" : "Send OTP"}
+              {loading ? "Sending…" : "Send Code"}
             </button>
           </form>
         )}
 
         {step === "otp" && (
           <form onSubmit={verifyOtp} className="form">
-            <div className="field">
-              <label htmlFor="code">Enter the 6-digit code sent to +91 {phone}</label>
+            <div className="field-v2">
+              <label htmlFor="code">Enter the 6-digit code sent to {identifierLabel}</label>
               <input id="code" inputMode="numeric" required maxLength={6} placeholder="123456"
+                className="input-v2"
+                autoComplete="one-time-code"
                 value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 style={{ letterSpacing: "0.3em", textAlign: "center", fontSize: "1.2rem" }} />
+              {delivered && (
+                <p className="city-note ok" style={{ marginTop: 8 }}>
+                  ✅ Code sent to {identifierLabel}. It expires in 10 minutes.
+                </p>
+              )}
               {devCode && (
                 <p className="city-note ok" style={{ marginTop: 8 }}>
-                  🛠 Dev mode — no SMS provider configured yet. Your code is <strong>{devCode}</strong>.
+                  🛠 Testing mode — no {channel === "email" ? "email" : "SMS"} provider is configured, so the
+                  code is shown here instead: <strong>{devCode}</strong>
                 </p>
               )}
             </div>
@@ -114,8 +158,8 @@ export default function LoginForm({ googleEnabled }: { googleEnabled: boolean })
             <button className="btn btn-primary" type="submit" disabled={loading || code.length !== 6}>
               {loading ? "Verifying…" : "Verify & Continue"}
             </button>
-            <button type="button" className="link-back" style={{ marginBottom: 0 }} onClick={() => { setStep("phone"); setCode(""); setError(null); }}>
-              ← Change number
+            <button type="button" className="link-back" style={{ marginBottom: 0 }} onClick={() => { setStep("identify"); setCode(""); setError(null); setDevCode(null); }}>
+              ← Change {channel === "email" ? "email" : "number"}
             </button>
           </form>
         )}

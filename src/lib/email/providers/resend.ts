@@ -1,4 +1,4 @@
-import type { DailyHoroscopeSignup, EmailProvider, EmailSendResult } from "../provider";
+import type { DailyHoroscopeSignup, EmailProvider, EmailSendResult, TransactionalEmail } from "../provider";
 import { emailConfig } from "../config";
 
 /**
@@ -36,5 +36,8 @@ export const resendEmailProvider: EmailProvider = {
       "resendEmailProvider is not implemented yet — see the TODO block in src/lib/email/providers/resend.ts. " +
       "Set EMAIL_PROVIDER=dummy (or leave unset) until this is wired."
     );
+  },
+  async send(_email: TransactionalEmail): Promise<EmailSendResult> {
+    throw new Error("resendEmailProvider.send is not implemented — use EMAIL_PROVIDER=brevo, or implement this.");
   },
 };
