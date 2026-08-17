@@ -11,6 +11,14 @@ const STEPS: Step[] = ["role", "name", "address", "plan", "wallet"];
 
 const TOPUP_OPTIONS = [200, 500, 1000];
 
+const STEP_LABEL: Record<Step, string> = {
+  role: "Who you are",
+  name: "Your name",
+  address: "Prasad delivery",
+  plan: "Choose a plan",
+  wallet: "Wallet setup",
+};
+
 function OnboardingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,41 +62,53 @@ function OnboardingForm() {
 
   return (
     <div className="container section" style={{ maxWidth: 480 }}>
-      <div className="onboarding-progress">
-        {STEPS.map((s, i) => (
-          <span key={s} className={`onboarding-dot ${i <= stepIndex ? "done" : ""}`} />
-        ))}
+      <div className="ob-head">
+        <div className="ob-rail" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={stepIndex + 1}>
+          <span className="ob-rail-fill" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
+        </div>
+        <div className="ob-steplabel">
+          <span>{STEP_LABEL[step]}</span>
+          <span className="ob-count">{stepIndex + 1} / {STEPS.length}</span>
+        </div>
       </div>
 
       {step === "role" && (
-        <div className="card onboarding-card">
-          <h2 style={{ marginBottom: 6 }}>Welcome 🙏</h2>
-          <p style={{ color: "var(--ink-soft)", marginBottom: 20 }}>How will you be using Awadh Astro?</p>
-          <div className="role-choice-grid">
-            <button type="button" className={`role-choice ${role === "user" ? "active" : ""}`} onClick={() => setRole("user")}>
-              <span className="role-choice-icon">🧑‍🤝‍🧑</span>
-              <span className="role-choice-title">I&apos;m a Devotee</span>
-              <span className="role-choice-desc">Get your kundali, consult astrologers, book pujas</span>
+        <div className="card-v2 card-gilded onboarding-card rise">
+          <span className="eyebrow">Step one</span>
+          <h2 className="ob-title">Aapka swagat hai 🙏</h2>
+          <p className="ob-sub">Ayodhya ki parampara, aapke haath mein. Tell us how you&apos;ll be using Awadh Astro.</p>
+          <div className="ob-choices">
+            <button type="button" aria-pressed={role === "user"} className="opt-card" onClick={() => setRole("user")}>
+              <span className="opt-check">✓</span>
+              <span className="opt-ic" aria-hidden="true">🪔</span>
+              <span className="opt-body">
+                <span className="opt-title">I&apos;m a Devotee</span>
+                <span className="opt-desc">Free kundali, consult astrologers, book puja at Ayodhya temples</span>
+              </span>
             </button>
-            <button type="button" className={`role-choice ${role === "astrologer" ? "active" : ""}`} onClick={() => setRole("astrologer")}>
-              <span className="role-choice-icon">🔮</span>
-              <span className="role-choice-title">I&apos;m an Astrologer</span>
-              <span className="role-choice-desc">Join our panel and start consulting customers</span>
+            <button type="button" aria-pressed={role === "astrologer"} className="opt-card" onClick={() => setRole("astrologer")}>
+              <span className="opt-check">✓</span>
+              <span className="opt-ic" aria-hidden="true">🔮</span>
+              <span className="opt-body">
+                <span className="opt-title">I&apos;m an Astrologer</span>
+                <span className="opt-desc">Join our verified panel and earn by guiding devotees</span>
+              </span>
             </button>
           </div>
-          <button className="btn btn-primary" style={{ width: "100%", marginTop: 20 }} disabled={!role} onClick={goNext}>
-            Continue
-          </button>
+          <div className="ob-actions">
+            <button className="btn btn-primary ob-primary" disabled={!role} onClick={goNext}>Continue</button>
+          </div>
         </div>
       )}
 
       {step === "name" && (
-        <div className="card onboarding-card">
-          <h2 style={{ marginBottom: 6 }}>What should we call you?</h2>
-          <p style={{ color: "var(--ink-soft)", marginBottom: 20 }}>Just your name for now — you can add more details later.</p>
-          <div className="field">
+        <div className="card-v2 card-gilded onboarding-card rise">
+          <span className="eyebrow">Step two</span>
+          <h2 className="ob-title">What should we call you?</h2>
+          <p className="ob-sub">Your name is used in the sankalp when a pandit performs puja on your behalf.</p>
+          <div className="field-v2">
             <label htmlFor="ob-name">Full Name</label>
-            <input id="ob-name" required value={name} placeholder="e.g. Priya Sharma" onChange={(e) => setName(e.target.value)} autoFocus />
+            <input id="ob-name" className="input-v2" required value={name} placeholder="e.g. Priya Sharma" onChange={(e) => setName(e.target.value)} autoFocus />
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <button className="btn btn-outline" onClick={goBack}>Back</button>
@@ -98,16 +118,17 @@ function OnboardingForm() {
       )}
 
       {step === "address" && (
-        <div className="card onboarding-card">
-          <h2 style={{ marginBottom: 6 }}>Where should we deliver prasad?</h2>
-          <p style={{ color: "var(--ink-soft)", marginBottom: 20 }}>Optional — add this anytime from your account.</p>
-          <div className="field">
+        <div className="card-v2 card-gilded onboarding-card rise">
+          <span className="eyebrow">Step three</span>
+          <h2 className="ob-title">Where should prasad reach you?</h2>
+          <p className="ob-sub">Blessed prasad is couriered from the temple after your puja. You can add this later.</p>
+          <div className="field-v2">
             <label htmlFor="ob-city">City</label>
             <PlaceAutocomplete id="ob-city" value={city} placeholder="Start typing a city…" onChange={setCity} />
           </div>
-          <div className="field">
+          <div className="field-v2">
             <label htmlFor="ob-line1">Address</label>
-            <input id="ob-line1" value={line1} placeholder="House / street / landmark" onChange={(e) => setLine1(e.target.value)} />
+            <input id="ob-line1" className="input-v2" value={line1} placeholder="House / street / landmark" onChange={(e) => setLine1(e.target.value)} />
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <button className="btn btn-outline" onClick={goBack}>Back</button>
@@ -118,26 +139,34 @@ function OnboardingForm() {
       )}
 
       {step === "plan" && (
-        <div className="card onboarding-card">
-          <h2 style={{ marginBottom: 6 }}>Choose your plan</h2>
-          <p style={{ color: "var(--ink-soft)", marginBottom: 20 }}>You can change this anytime from your account.</p>
-          <div style={{ display: "grid", gap: 12 }}>
-            {PLUS_PLANS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`onboarding-plan-choice ${plan === (p.id === "plus" ? "plus" : "free") ? "active" : ""}`}
-                onClick={() => setPlan(p.id === "plus" ? "plus" : "free")}
-              >
-                <div className="onboarding-plan-head">
-                  <span className="onboarding-plan-name">{p.name}</span>
-                  <span className="onboarding-plan-price">{p.pricePerYear === 0 ? "Free" : `₹${p.pricePerYear}/yr`}</span>
-                </div>
-                <ul>
-                  {p.features.slice(0, 3).map((f) => <li key={f}>{f}</li>)}
-                </ul>
-              </button>
-            ))}
+        <div className="card-v2 card-gilded onboarding-card rise">
+          <span className="eyebrow">Step four</span>
+          <h2 className="ob-title">Choose your path</h2>
+          <p className="ob-sub">Start free forever, or unlock daily guidance. Change it anytime.</p>
+          <div className="ob-choices">
+            {PLUS_PLANS.map((p) => {
+              const val = p.id === "plus" ? "plus" : "free";
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-pressed={plan === val}
+                  className="opt-card ob-plan"
+                  onClick={() => setPlan(val)}
+                >
+                  <span className="opt-check">✓</span>
+                  <span className="opt-body">
+                    <span className="ob-plan-head">
+                      <span className="opt-title">{p.name}</span>
+                      <span className="ob-plan-price">{p.pricePerYear === 0 ? "Free" : `₹${p.pricePerYear}`}<small>{p.pricePerYear === 0 ? "" : "/yr"}</small></span>
+                    </span>
+                    <span className="ob-plan-feats">
+                      {p.features.slice(0, 3).map((f) => <span key={f} className="ob-feat">✦ {f}</span>)}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <button className="btn btn-outline" onClick={goBack}>Back</button>
@@ -147,11 +176,10 @@ function OnboardingForm() {
       )}
 
       {step === "wallet" && (
-        <div className="card onboarding-card">
-          <h2 style={{ marginBottom: 6 }}>Set up your wallet</h2>
-          <p style={{ color: "var(--ink-soft)", marginBottom: 4 }}>
-            Optional — add money now for instant, uninterrupted consultations.
-          </p>
+        <div className="card-v2 card-gilded onboarding-card rise">
+          <span className="eyebrow">Last step</span>
+          <h2 className="ob-title">Set up your wallet</h2>
+          <p className="ob-sub">Optional — a funded wallet means your call never cuts off mid-consultation.</p>
           <div className="wallet-benefit-row">
             <span className="wallet-benefit-star" tabIndex={0}>
               ⭐

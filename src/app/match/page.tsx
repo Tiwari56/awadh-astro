@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { Dictionary } from "@/lib/i18n/dictionary";
+import { kootaBand, kootaMeaning, kootaSummary, scoreGuidance } from "@/lib/astrology/matching";
 import type { MatchPerson, MatchResult } from "@/lib/astrology/matching";
 
 const EMPTY: MatchPerson = { name: "", dateOfBirth: "", timeOfBirth: "", placeOfBirth: "", timeUnknown: false };
@@ -165,24 +166,51 @@ export default function MatchPage() {
             </div>
           </div>
 
-          <div className="gauge" style={{ ["--pct" as string]: result.percent }}>
-            <div className="gauge-in">
-              <div className="gauge-pct">{result.percent}<small>{m.percentOf}</small></div>
-              <div className="gauge-of">{result.totalGot} / {result.totalMax} {m.guna}</div>
-              <div className="gauge-verdict">✦ {result.verdict.toUpperCase()}</div>
+          {/* Traditional framing first (gunas out of 36), percentage second —
+              the guna count is what families and astrologers actually quote. */}
+          <div className="score-panel card-v2 card-gilded">
+            <div className="gauge" style={{ ["--pct" as string]: result.percent }}>
+              <div className="gauge-in">
+                <div className="gauge-pct">{result.totalGot}<small>/{result.totalMax}</small></div>
+                <div className="gauge-of">{m.guna}</div>
+              </div>
+            </div>
+            <div className="score-side">
+              <span className={`score-verdict band-${result.totalGot >= 25 ? "strong" : result.totalGot >= 18 ? "moderate" : "weak"}`}>
+                ✦ {result.verdict}
+              </span>
+              <p className="score-guidance">{scoreGuidance(result.totalGot)}</p>
+              <div className="score-scale" aria-hidden="true">
+                <span className="ss-bar"><i style={{ width: `${(result.totalGot / result.totalMax) * 100}%` }} /></span>
+                <span className="ss-marks"><b style={{ left: `${(18 / 36) * 100}%` }}>18 — classical minimum</b></span>
+              </div>
+              <span className="score-pct">{result.percent}{m.percentOf} compatibility</span>
             </div>
           </div>
 
           <div className="divider"><span className="di" /></div>
           <h3 className="kundali-section-title">{m.ashtakootBreakdown}</h3>
-          <div className="card" style={{ padding: "6px 20px" }}>
-            {result.kootas.map((k) => (
-              <div key={k.key} className="koot-row">
-                <div className="koot-name">{k.label}<small className="hi">{k.hindi}</small></div>
-                <div className="koot-bar"><i style={{ width: `${(k.got / k.max) * 100}%` }} /></div>
-                <div className="koot-pct">{k.got}/{k.max}</div>
-              </div>
-            ))}
+          <div className="koota-list">
+            {result.kootas.map((k) => {
+              const band = kootaBand(k.got, k.max);
+              return (
+                <div key={k.key} className={`koota-card band-${band}`}>
+                  <div className="kc-top">
+                    <span className="kc-name">{k.label} <small className="hi">{k.hindi}</small></span>
+                    <span className="kc-score">{k.got}<small>/{k.max}</small></span>
+                  </div>
+                  <div className="koot-bar"><i style={{ width: `${(k.got / k.max) * 100}%` }} /></div>
+                  <p className="kc-note">{kootaSummary(k.key)}</p>
+                  <p className="kc-meaning">{kootaMeaning(k.key, k.got, k.max)}</p>
+                  {k.note && k.note !== kootaSummary(k.key) && (
+                    <details className="kc-more">
+                      <summary>Classical reading</summary>
+                      <p>{k.note}</p>
+                    </details>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className={`match-dosha ${result.mangal.compatible ? "" : "warn"}`}>

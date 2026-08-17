@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import PlaceAutocomplete from "@/components/ui/PlaceAutocomplete";
-import type { BookingStatus } from "@/lib/bookings";
+import { BOOKING_STAGES, type BookingStatus } from "@/lib/bookings";
 
 interface Address { id: string; label: string | null; line1: string; city: string; state: string | null; pincode: string | null; isDefault: boolean; }
 interface KundaliRow { id: string; subjectName: string; dateOfBirth: string; placeOfBirth: string; createdAt: string; }
@@ -111,20 +111,27 @@ export default function AccountPage() {
 
   return (
     <div className="container section" style={{ maxWidth: 640 }}>
-      <div className="card" style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-        <div className="header-avatar" style={{ width: 52, height: 52, fontSize: "1.3rem" }}>
-          {(user.name ?? "?")[0]?.toUpperCase()}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: "1.05rem" }}>{user.name || "Devotee"}</div>
-          <div style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>{user.phone || user.email}</div>
-          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-            <span className="badge badge-moderate">{user.plan === "plus" ? "Awadh Plus" : "Free Plan"}</span>
-            {isAstrologer && <span className="badge badge-ok">Astrologer</span>}
-            {isAdmin && <span className="badge badge-warn">Admin</span>}
+      <div className="acct-hero card-v2 card-gilded rise">
+        <div className="acct-hero-top">
+          <div className="acct-avatar" aria-hidden="true">{(user.name ?? "?")[0]?.toUpperCase()}</div>
+          <div className="acct-id">
+            <div className="acct-name">{user.name || "Devotee"}</div>
+            <div className="acct-contact">{user.phone || user.email}</div>
+            <div className="acct-badges">
+              <span className={`chip-role ${user.plan === "plus" ? "chip-plus" : ""}`}>
+                {user.plan === "plus" ? "✦ Awadh Plus" : "Free Plan"}
+              </span>
+              {isAstrologer && <span className="chip-role chip-astro">🔮 Astrologer</span>}
+              {isAdmin && <span className="chip-role chip-admin">🛡 Admin</span>}
+            </div>
           </div>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={() => signOut({ callbackUrl: "/" })}>Sign Out</button>
+        <div className="acct-hero-stats">
+          <div className="stat-v2"><span className="sv">₹{summary.walletBalanceINR.toLocaleString("en-IN")}</span><span className="sl">Wallet</span></div>
+          <div className="stat-v2"><span className="sv">{summary.bookings.length}</span><span className="sl">Bookings</span></div>
+          <div className="stat-v2"><span className="sv">{summary.kundalis.length}</span><span className="sl">Kundalis</span></div>
+        </div>
+        <button className="btn btn-outline btn-sm acct-signout" onClick={() => signOut({ callbackUrl: "/" })}>Sign Out</button>
       </div>
 
       {isAdmin && (
@@ -149,11 +156,13 @@ export default function AccountPage() {
         </div>
       )}
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h3 style={{ marginBottom: 10 }}>Wallet</h3>
-        <div className="wallet-balance-row" style={{ marginBottom: 12 }}>
-          <span style={{ fontSize: "1.6rem", fontWeight: 700 }}>₹{summary.walletBalanceINR.toLocaleString("en-IN")}</span>
+      <div className="card-v2 rise rise-1 acct-sec">
+        <div className="acct-sec-head"><h3>Wallet</h3></div>
+        <div className="wallet-panel">
+          <span className="wallet-label">Available balance</span>
+          <span className="wallet-amount">₹{summary.walletBalanceINR.toLocaleString("en-IN")}</span>
         </div>
+        <p className="acct-hint">Add money to keep consultations uninterrupted.</p>
         <div className="topup-options">
           {TOPUP_OPTIONS.map((amt) => (
             <button key={amt} type="button" className="topup-chip" disabled={toppingUp !== null} onClick={() => topUp(amt)}>
@@ -217,26 +226,36 @@ export default function AccountPage() {
         )}
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+      <div className="card-v2 rise rise-2 acct-sec">
+        <div className="acct-sec-head">
           <h3>My Bookings</h3>
-          {summary.bookings.length > 0 && <Link href="/seva/bookings" style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--gold-bright)" }}>View All →</Link>}
+          {summary.bookings.length > 0 && <Link href="/seva/bookings" className="acct-link">View all →</Link>}
         </div>
         {summary.bookings.length > 0 ? (
-          summary.bookings.slice(0, 3).map((b) => (
-            <div key={b.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
-              <div>
-                <div style={{ fontWeight: 600 }}>{b.pujaName}</div>
-                <div style={{ color: "var(--ink-soft)", fontSize: "0.85rem" }}>{b.devoteeName} · {new Date(b.createdAt).toLocaleDateString()}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: 600 }}>₹{b.amountINR.toLocaleString("en-IN")}</div>
-                <span className="badge badge-moderate">{STATUS_LABEL[b.status]}</span>
-              </div>
-            </div>
-          ))
+          <div className="bk-list">
+            {summary.bookings.slice(0, 3).map((b) => {
+              const stage = BOOKING_STAGES.indexOf(b.status);
+              return (
+                <div key={b.id} className="bk-item">
+                  <div className="bk-top">
+                    <div className="bk-meta">
+                      <span className="bk-name">{b.pujaName}</span>
+                      <span className="bk-sub">{b.devoteeName} · {new Date(b.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    </div>
+                    <span className="bk-amt">₹{b.amountINR.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="bk-track" role="img" aria-label={`Status: ${STATUS_LABEL[b.status]}, step ${stage + 1} of ${BOOKING_STAGES.length}`}>
+                    {BOOKING_STAGES.map((st, i) => (
+                      <span key={st} className={`bk-node${i <= stage ? " done" : ""}${i === stage ? " now" : ""}`} />
+                    ))}
+                  </div>
+                  <span className="bk-status">{STATUS_LABEL[b.status]}</span>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <p style={{ color: "var(--ink-soft)" }}>No bookings yet. <Link href="/seva">Book a Seva</Link></p>
+          <p className="acct-empty">No bookings yet. <Link href="/seva">Book a Seva →</Link></p>
         )}
       </div>
 
