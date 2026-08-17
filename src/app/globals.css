@@ -1206,3 +1206,14 @@ p { text-wrap: pretty; }
 .pan-grid .stat-v2 { gap: 4px; }
 .pan-v { font-size: var(--fs-base) !important; font-family: var(--font-display-stack); }
 .pan-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: var(--sp-5); }
+
+/* Decorative orbiting planets sit directly behind the hero headline on small
+   screens, muddying it. They're atmosphere, not information — drop them on
+   phones (the ambient sunburst and starfield still carry the mood) and just
+   soften them on tablets. */
+@media (max-width: 700px) {
+  .landing .hero-orbits { display: none; }
+}
+@media (min-width: 701px) and (max-width: 1024px) {
+  .landing .hero-orbits { opacity: 0.5; }
+}

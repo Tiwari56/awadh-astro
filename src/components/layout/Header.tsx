@@ -8,12 +8,18 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
+/**
+ * Ticker lines. Deliberately free of invented statistics — the earlier
+ * "48,726+ pandits" / "rated by 9.5 crore users" claims were placeholder
+ * numbers with nothing behind them, which is a real trust problem on a live
+ * consumer site. These say what is actually true of the product instead.
+ */
 const tickerItems: { text: string; href?: string }[] = [
-  { text: "🎉 First consultation FREE — Use code AWADH1ST", href: "/astrologers" },
-  { text: "✨ 48,726+ Verified Ayodhya Pandits" },
-  { text: "🔱 Live Pujas from Hanuman Garhi & Ram Ki Paidi" },
-  { text: "⭐ Rated 4.8/5 by 9.5 Crore users" },
-  { text: "🪔 Prasad delivered to your door" },
+  { text: "🎉 Your first consultation is free", href: "/astrologers" },
+  { text: "🪔 Every pandit on this platform is verified in person at Ayodhya" },
+  { text: "🔱 Live darshan from Hanuman Garhi & Ram Ki Paidi", href: "/seva" },
+  { text: "📿 Prasad couriered from the temple to your door" },
+  { text: "🕉️ Can't travel to Ayodhya? We take the sankalp in your name", href: "/seva" },
 ];
 
 export default function Header() {
