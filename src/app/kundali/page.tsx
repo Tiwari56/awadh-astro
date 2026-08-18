@@ -75,6 +75,111 @@ function RemedyCta({ dosha, remedyKey, hi, t }: { dosha: DoshaSummary; remedyKey
   );
 }
 
+const HOROSCOPE_TIMES = ["6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "8:00 PM", "9:00 PM"];
+
+/**
+ * Email-the-report + schedule-daily-horoscope actions, both delivered via
+ * the real email provider (Brevo) through the existing send paths — no new
+ * delivery mechanism, just surfaced where someone actually wants them
+ * instead of buried inside a chat upsell card.
+ */
+function ReportDelivery({
+  hi, name, birthLine, result, defaultEmail,
+}: {
+  hi: boolean; name: string; birthLine: string; result: KundaliResult | null; defaultEmail: string;
+}) {
+  const [reportEmail, setReportEmail] = useState(defaultEmail);
+  const [reportStatus, setReportStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  const [scheduleEmail, setScheduleEmail] = useState(defaultEmail);
+  const [scheduleTime, setScheduleTime] = useState(HOROSCOPE_TIMES[1]);
+  const [scheduleStatus, setScheduleStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function sendReport(e: FormEvent) {
+    e.preventDefault();
+    if (!result) return;
+    setReportStatus("sending");
+    setReportError(null);
+    try {
+      const res = await fetch("/api/kundali/email-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: reportEmail, name, birthLine, result, locale: hi ? "hi" : "en" }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setReportError(data.error ?? "Could not send"); setReportStatus("error"); return; }
+      setReportStatus("sent");
+    } catch {
+      setReportStatus("error");
+    }
+  }
+
+  async function schedule(e: FormEvent) {
+    e.preventDefault();
+    setScheduleStatus("sending");
+    try {
+      const res = await fetch("/api/email/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: scheduleEmail, preferredTime: scheduleTime, name }),
+      });
+      setScheduleStatus(res.ok ? "sent" : "error");
+    } catch {
+      setScheduleStatus("error");
+    }
+  }
+
+  return (
+    <div className="report-delivery">
+      <form className="card-v2 report-action" onSubmit={sendReport}>
+        <h4>📧 {hi ? "यह रिपोर्ट ईमेल करें" : "Email me this report"}</h4>
+        <p className="report-action-desc">
+          {hi ? "मुख्य बिंदुओं का सारांश तुरंत आपके इनबॉक्स में भेजें।" : "Sends a summary of the key points straight to your inbox."}
+        </p>
+        {reportStatus === "sent" ? (
+          <p className="city-note ok">✅ {hi ? "भेज दिया गया — अपना इनबॉक्स जांचें।" : "Sent — check your inbox."}</p>
+        ) : (
+          <>
+            <div className="report-action-row">
+              <input type="email" required className="input-v2" placeholder="you@example.com"
+                value={reportEmail} onChange={(e) => setReportEmail(e.target.value)} />
+              <button className="btn btn-primary btn-sm" type="submit" disabled={reportStatus === "sending" || !result}>
+                {reportStatus === "sending" ? "…" : hi ? "भेजें" : "Send"}
+              </button>
+            </div>
+            {reportError && <p className="city-note warn">{reportError}</p>}
+          </>
+        )}
+      </form>
+
+      <form className="card-v2 report-action" onSubmit={schedule}>
+        <h4>🔔 {hi ? "दैनिक राशिफल शेड्यूल करें" : "Schedule my daily horoscope"}</h4>
+        <p className="report-action-desc">
+          {hi ? "हर दिन चुने हुए समय पर आपका राशिफल आपके ईमेल पर पहुंचेगा।" : "Get your horoscope delivered to your inbox at the same time every day."}
+        </p>
+        {scheduleStatus === "sent" ? (
+          <p className="city-note ok">✅ {hi ? "शेड्यूल हो गया — पुष्टि के लिए इनबॉक्स जांचें।" : "Scheduled — check your inbox to confirm."}</p>
+        ) : (
+          <>
+            <div className="report-action-row">
+              <input type="email" required className="input-v2" placeholder="you@example.com"
+                value={scheduleEmail} onChange={(e) => setScheduleEmail(e.target.value)} />
+              <select className="input-v2" style={{ flex: "0 0 120px" }} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)}>
+                {HOROSCOPE_TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <button className="btn btn-primary btn-sm" type="submit" disabled={scheduleStatus === "sending"}>
+                {scheduleStatus === "sending" ? "…" : hi ? "शेड्यूल करें" : "Schedule"}
+              </button>
+            </div>
+            {scheduleStatus === "error" && <p className="city-note warn">{hi ? "अभी शेड्यूल नहीं हो सका — दोबारा प्रयास करें।" : "Could not schedule right now — please try again."}</p>}
+          </>
+        )}
+      </form>
+    </div>
+  );
+}
+
 /**
  * Planetary positions. Renders as a table on wide screens and as stacked
  * cards on phones — an 8-column table is unreadable at 360px, and phones are
@@ -371,7 +476,6 @@ export default function KundaliPage() {
             )}
           </div>
 
-          {/* Planets */}
           {/* Report / download */}
           <div className={`tab-panel ${tab === "Report" ? "active" : ""}`}>
             <div className="card report-cover">
@@ -382,6 +486,13 @@ export default function KundaliPage() {
                 ⬇ {k.downloadPdf}
               </button>
             </div>
+            <ReportDelivery
+              hi={hi}
+              name={form.name}
+              birthLine={`${form.dateOfBirth} · ${form.timeUnknown ? "—" : form.timeOfBirth} · ${form.placeOfBirth}`}
+              result={result}
+              defaultEmail={session?.user?.email ?? ""}
+            />
           </div>
 
           <p className="kundali-disclaimer">{k.disclaimer}</p>

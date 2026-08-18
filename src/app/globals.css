@@ -1279,3 +1279,13 @@ p { text-wrap: pretty; }
 .msg-typing span:nth-child(3) { animation-delay: 0.3s; }
 @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .msg-typing span { animation: none; } }
+
+/* ---------- Report delivery (email report / schedule horoscope) ---------- */
+.report-delivery { display: grid; gap: var(--sp-3); margin-top: var(--sp-4); grid-template-columns: 1fr; }
+@media (min-width: 640px) { .report-delivery { grid-template-columns: 1fr 1fr; } }
+.report-action { padding: var(--sp-4); }
+.report-action h4 { font-size: var(--fs-base); margin-bottom: 4px; }
+.report-action-desc { font-size: var(--fs-xs); color: var(--ink-soft); margin-bottom: var(--sp-3); }
+.report-action-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.report-action-row .input-v2 { flex: 1; min-width: 140px; }
+@media print { .report-delivery { display: none !important; } }
