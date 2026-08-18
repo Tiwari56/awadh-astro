@@ -7,6 +7,24 @@ import type { ChatMessage, ChatUpsellPayload } from "@/types";
 
 const HOROSCOPE_TIMES = ["6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "8:00 PM", "9:00 PM"];
 
+/** Starter prompts shown before the first real question — the empty text box was the biggest complaint about this page. */
+const SUGGESTIONS_EN = [
+  "What does my Mangal Dosha mean?",
+  "Will this year be good for my career?",
+  "When is a good time to get married?",
+  "How is my financial year looking?",
+  "What is Sade Sati and am I in it?",
+  "Tell me about today's panchang",
+];
+const SUGGESTIONS_HI = [
+  "मेरा मंगल दोष क्या दर्शाता है?",
+  "क्या यह वर्ष मेरे करियर के लिए अच्छा रहेगा?",
+  "विवाह के लिए शुभ समय कब है?",
+  "मेरा आर्थिक वर्ष कैसा रहेगा?",
+  "साढ़े साती क्या है, क्या मैं इसमें हूं?",
+  "आज का पंचांग बताइए",
+];
+
 /**
  * The consulting-intent upsell card — shows Plus benefits + lets the user
  * sign up to get their daily horoscope by EMAIL (the founder's call: build
@@ -88,9 +106,7 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function onSend(e: FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function send(text: string) {
     if (!text || sending) return;
 
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", text, timestamp: Date.now() };
@@ -125,10 +141,24 @@ export default function ChatPage() {
     }
   }
 
+  function onSend(e: FormEvent) {
+    e.preventDefault();
+    send(input.trim());
+  }
+
+  const suggestions = locale === "hi" ? SUGGESTIONS_HI : SUGGESTIONS_EN;
+  const showSuggestions = messages.length === 1; // only before the conversation actually starts
+
   return (
     <div className="container section" style={{ maxWidth: 720 }}>
-      <h2>{t.nav.aiChat}</h2>
-      <div className="chat-box">
+      <div className="chat-header">
+        <div className="chat-avatar" aria-hidden="true">🕉️</div>
+        <div>
+          <h2 style={{ marginBottom: 2 }}>{locale === "hi" ? "एआई ज्योतिषी" : "AI Astrologer"}</h2>
+          <span className="chat-status"><span className="chat-status-dot" />{locale === "hi" ? "आपकी कुंडली से जुड़ा हुआ" : "Grounded in your saved kundali"}</span>
+        </div>
+      </div>
+      <div className="chat-box card-gilded">
         <div className="chat-messages">
           {messages.map((m) =>
             m.kind === "upsell" && m.upsell ? (
@@ -142,7 +172,16 @@ export default function ChatPage() {
               </div>
             )
           )}
-          {sending && <div className="msg msg-ai">{c.consulting}</div>}
+          {sending && <div className="msg msg-ai msg-typing"><span /><span /><span /></div>}
+          {showSuggestions && !sending && (
+            <div className="chat-suggestions">
+              {suggestions.map((q) => (
+                <button key={q} type="button" className="chat-suggestion-chip" onClick={() => send(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
         <form className="chat-input-row" onSubmit={onSend}>

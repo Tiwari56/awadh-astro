@@ -10,36 +10,65 @@ import { vedic } from "@/lib/i18n/vedic-terms";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import type { BirthDetails, DoshaSummary, KundaliResult, PlanetPosition } from "@/types";
 
-function DoshaCard({ title, dosha, t }: { title: string; dosha: DoshaSummary; t: Dictionary["kundali"] }) {
+type DoshaKind = "mangal" | "sadeSati" | "kaalSarp";
+
+/**
+ * The paragraph a dosha card shows. In Hindi this deliberately does NOT
+ * translate dosha.summary — Prokerala's free-text description/remedy fields
+ * stay English regardless of the `language` request param (verified live),
+ * so a literal translation would still embed English fragments mid-sentence.
+ * The Hindi builders in vedic-terms.ts convey the same meaning from the
+ * dosha's present/severity fields instead, which we fully control.
+ */
+function doshaText(kind: DoshaKind, dosha: DoshaSummary, hi: boolean): string {
+  if (!hi) return dosha.summary;
+  if (kind === "mangal") return vedic.mangalDosha(dosha.present, dosha.severity);
+  if (kind === "kaalSarp") return vedic.kaalSarp(dosha.present);
+  return vedic.sadeSati(dosha.present, dosha.severity, dosha.summary);
+}
+
+function DoshaCard({ title, dosha, kind, hi, t }: { title: string; dosha: DoshaSummary; kind: DoshaKind; hi: boolean; t: Dictionary["kundali"] }) {
   return (
     <div className="card dosha-card">
       <div className="dosha-head">
         <span className="dosha-title">{title}</span>
         <span className={`badge ${dosha.present ? "badge-warn" : "badge-ok"}`}>
-          {dosha.present ? `${t.present} · ${dosha.severity}` : t.clear}
+          {dosha.present ? `${t.present} · ${hi ? vedic.severity(dosha.severity) : dosha.severity}` : t.clear}
         </span>
       </div>
-      <p>{dosha.summary}</p>
+      <p>{doshaText(kind, dosha, hi)}</p>
     </div>
   );
 }
 
 /** Maps a present dosha to the Seva puja that traditionally addresses it. */
-const REMEDY_MAP: Record<string, { pujaId: string; title: string; reason: string }> = {
-  mangal: { pujaId: "mangal-dosha-nivaran", title: "Mangal Dosha Nivaran", reason: "Traditionally performed before marriage to pacify Mars." },
-  sadeSati: { pujaId: "navagraha-shanti", title: "Navagraha Shanti", reason: "Pacifies Saturn's transit during the Sade Sati phase." },
-  kaalSarp: { pujaId: "navagraha-shanti", title: "Navagraha Shanti", reason: "A broad planetary-pacification remedy used for Kaal Sarp effects." },
+const REMEDY_MAP: Record<string, { pujaId: string; title: string; titleHi: string; reason: string; reasonHi: string }> = {
+  mangal: {
+    pujaId: "mangal-dosha-nivaran", title: "Mangal Dosha Nivaran", titleHi: "मंगल दोष निवारण",
+    reason: "Traditionally performed before marriage to pacify Mars.",
+    reasonHi: "विवाह से पूर्व मंगल को शांत करने के लिए परंपरागत रूप से की जाती है।",
+  },
+  sadeSati: {
+    pujaId: "navagraha-shanti", title: "Navagraha Shanti", titleHi: "नवग्रह शांति",
+    reason: "Pacifies Saturn's transit during the Sade Sati phase.",
+    reasonHi: "साढ़े साती के दौरान शनि के गोचर को शांत करने हेतु।",
+  },
+  kaalSarp: {
+    pujaId: "navagraha-shanti", title: "Navagraha Shanti", titleHi: "नवग्रह शांति",
+    reason: "A broad planetary-pacification remedy used for Kaal Sarp effects.",
+    reasonHi: "काल सर्प दोष के प्रभाव को शांत करने का व्यापक ग्रह-शांति उपाय।",
+  },
 };
 
-function RemedyCta({ dosha, remedyKey, t }: { dosha: DoshaSummary; remedyKey: keyof typeof REMEDY_MAP; t: Dictionary["kundali"] }) {
+function RemedyCta({ dosha, remedyKey, hi, t }: { dosha: DoshaSummary; remedyKey: keyof typeof REMEDY_MAP; hi: boolean; t: Dictionary["kundali"] }) {
   if (!dosha.present) return null;
   const remedy = REMEDY_MAP[remedyKey];
   return (
     <div className="remedy-cta">
       <span className="rc-ic" aria-hidden="true">🛕</span>
       <span className="rc-t">
-        <b>{t.suggestedRemedy}: {remedy.title}</b>
-        {remedy.reason}
+        <b>{t.suggestedRemedy}: {hi ? remedy.titleHi : remedy.title}</b>
+        {hi ? remedy.reasonHi : remedy.reason}
       </span>
       <a href={`/seva?puja=${remedy.pujaId}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">{t.book}</a>
     </div>
@@ -218,7 +247,16 @@ export default function KundaliPage() {
 
       {result && (
         <div>
-          <p className="result-name">{k.resultFor} <strong>{form.name}</strong> · {form.dateOfBirth} · {form.placeOfBirth}</p>
+          <div className="result-header-block">
+            <p className="result-name">{k.resultFor} <strong>{form.name}</strong></p>
+            <div className="result-facts">
+              <span>📅 {form.dateOfBirth}</span>
+              <span>🕐 {form.timeUnknown ? (hi ? "समय अज्ञात (दोपहर 12:00 अनुमानित)" : "Unknown (12:00 noon assumed)") : form.timeOfBirth}</span>
+              <span>📍 {form.placeOfBirth}</span>
+              <span>{form.gender === "female" ? "♀" : form.gender === "male" ? "♂" : "⚧"} {hi ? (form.gender === "female" ? "महिला" : form.gender === "male" ? "पुरुष" : "अन्य") : form.gender[0].toUpperCase() + form.gender.slice(1)}</span>
+              <span className="result-fact-muted">{hi ? "अयनांश: लाहिड़ी" : "Ayanamsa: Lahiri"}</span>
+            </div>
+          </div>
           {form.timeUnknown && <p className="kundali-time-note">{k.timeUnknownBanner}</p>}
           {sessionStatus === "unauthenticated" && (
             <p className="city-note ok" style={{ marginBottom: 14 }}>
@@ -302,16 +340,16 @@ export default function KundaliPage() {
             <h3 className="kundali-section-title">🛡️ {k.doshaTitle}</h3>
             <div className="grid grid-3">
               <div>
-                <DoshaCard title={k.mangalDosha} dosha={result.mangalDosha} t={k} />
-                <RemedyCta dosha={result.mangalDosha} remedyKey="mangal" t={k} />
+                <DoshaCard title={k.mangalDosha} dosha={result.mangalDosha} kind="mangal" hi={hi} t={k} />
+                <RemedyCta dosha={result.mangalDosha} remedyKey="mangal" hi={hi} t={k} />
               </div>
               <div>
-                <DoshaCard title={k.sadeSati} dosha={result.sadeSati} t={k} />
-                <RemedyCta dosha={result.sadeSati} remedyKey="sadeSati" t={k} />
+                <DoshaCard title={k.sadeSati} dosha={result.sadeSati} kind="sadeSati" hi={hi} t={k} />
+                <RemedyCta dosha={result.sadeSati} remedyKey="sadeSati" hi={hi} t={k} />
               </div>
               <div>
-                <DoshaCard title={k.kaalSarp} dosha={result.kaalSarpDosha} t={k} />
-                <RemedyCta dosha={result.kaalSarpDosha} remedyKey="kaalSarp" t={k} />
+                <DoshaCard title={k.kaalSarp} dosha={result.kaalSarpDosha} kind="kaalSarp" hi={hi} t={k} />
+                <RemedyCta dosha={result.kaalSarpDosha} remedyKey="kaalSarp" hi={hi} t={k} />
               </div>
             </div>
 
@@ -322,10 +360,10 @@ export default function KundaliPage() {
                   {result.yogas.map((y) => (
                     <div key={y.name} className="card yoga-card">
                       <div className="yoga-head">
-                        <span className="yoga-name">{y.name}</span>
-                        <span className={`badge badge-${y.strength.toLowerCase()}`}>{y.strength}</span>
+                        <span className="yoga-name">{hi ? vedic.yogaName(y.name) : y.name}</span>
+                        <span className={`badge badge-${y.strength.toLowerCase()}`}>{hi ? vedic.severity(y.strength) : y.strength}</span>
                       </div>
-                      <p>{y.effect}</p>
+                      <p>{hi ? (vedic.yogaEffect(y.name) || y.effect) : y.effect}</p>
                     </div>
                   ))}
                 </div>

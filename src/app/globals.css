@@ -483,8 +483,11 @@ a.card:hover, .astro-card:hover, .puja-card:hover { transform: translateY(-4px);
 .inner-card { background: var(--surface); border: 1px solid var(--line); border-top-color: var(--gold-deep); border-radius: var(--r-xl); padding: 28px; box-shadow: var(--shadow-md); }
 
 /* kundali result */
-.result-name { font-size: 1.05rem; margin-bottom: 18px; color: var(--ink-soft); }
+.result-header-block { margin-bottom: 18px; }
+.result-name { font-size: 1.05rem; margin-bottom: 8px; color: var(--ink-soft); }
 .result-name strong { color: var(--ink); }
+.result-facts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.86rem; color: var(--ink-soft); }
+.result-fact-muted { color: var(--muted); font-style: italic; }
 .result-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; animation: fadeUp 0.5s var(--ease-out) both; }
 .stat .label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold-bright); font-weight: 700; }
@@ -870,7 +873,8 @@ table.planets tr.planet-row-lagna td strong { color: var(--gold-bright); }
     --line: #d9b877; --gold: #92400e; --gold-bright: #92400e; --gold-deep: #6b3009; --green: #166534; --danger: #991b1b;
   }
   .site-header, .promo-ticker, .bottom-nav, .site-footer, .kundali-tabs, .hero-actions,
-  .promo-modal-overlay, .link-back, .remedy-cta a, .remedy-cta button, .kundali-time-note { display: none !important; }
+  .promo-modal-overlay, .link-back, .remedy-cta a, .remedy-cta button, .kundali-time-note,
+  .city-note, .header-cta, .mobile-drawer { display: none !important; }
   body { background: #fdf6e6 !important; padding-bottom: 0 !important; }
   main::before {
     content: "ॐ  श्री गणेशाय नमः  •  AWADH ASTRO  •  Kundali Report";
@@ -878,15 +882,39 @@ table.planets tr.planet-row-lagna td strong { color: var(--gold-bright); }
     font-size: 15pt; color: #92400e; padding: 0 0 10px; margin-bottom: 16px;
     border-bottom: 2.5px double #92400e; letter-spacing: 0.03em;
   }
-  .tab-panel { display: block !important; break-inside: avoid; margin-bottom: 16px; }
-  .kundali-section-title { border-bottom: 1px solid #d9b877; padding-bottom: 6px; }
+  /* Section boundary the printed report reads by, since the on-screen tabs
+     are gone — each was previously indistinguishable whitespace. */
+  .tab-panel { display: block !important; break-inside: avoid; margin: 0 0 22px; padding-top: 14px; border-top: 1px solid #e7d3a0; }
+  .tab-panel:first-child { border-top: none; padding-top: 0; }
+  .kundali-section-title { border-bottom: 1px solid #d9b877; padding-bottom: 6px; break-after: avoid; }
   .card, .inner-card {
     box-shadow: none !important; background: #fffdf7 !important;
     border: 1px solid #d9b877 !important; outline: 1px solid #f0dfae; outline-offset: -4px;
+    break-inside: avoid;
   }
   .report-cover { display: none !important; } /* the "click to download" card itself doesn't need to print */
   a { color: #2a1608 !important; }
   .kundli-chart .chart-outline { fill: #fffdf7; }
+
+  /* Denser grids for print — the screen's wide, sparse cards (built for a
+     touch target on a phone) left large empty boxes on a printed page. */
+  .result-summary { grid-template-columns: repeat(5, 1fr) !important; gap: 8px !important; }
+  .detail-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; }
+  .stat { padding: 8px 10px !important; }
+  .grid-2, .grid-3 { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+  .dosha-card, .yoga-card { padding: 10px 12px !important; }
+  .dosha-card p, .yoga-card p { font-size: 9.5pt !important; line-height: 1.4 !important; }
+  /* Force the desktop table layout regardless of the print page's rendered
+     width — the phone card layout (one card per planet) would otherwise
+     print 10 tall cards instead of one compact table. */
+  .planets-table-wide { display: block !important; }
+  .planets-cards { display: none !important; }
+  table.planets { min-width: 0 !important; font-size: 9pt !important; }
+  table.planets th, table.planets td { padding: 6px 8px !important; }
+
+  .result-header-block { break-after: avoid; }
+  .chart-wrap { padding: 10px !important; }
+  .kundli-chart { max-width: 320px !important; margin: 0 auto; }
 }
 
 /* ============================================================
@@ -1178,43 +1206,76 @@ p { text-wrap: pretty; }
 .kc-more[open] summary::before { content: "▾ "; }
 .kc-more p { font-size: var(--fs-xs); color: var(--muted); line-height: 1.5; margin: 7px 0 0; }
 
-/* ---------- Panchang calendar ---------- */
-.cal-card { margin-bottom: var(--sp-5); }
-.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--sp-4); }
-.cal-title { font-family: var(--font-display-stack); font-size: var(--fs-lg); color: var(--ink); }
-.cal-nav { width: var(--tap); height: var(--tap); border-radius: 50%; border: 1px solid var(--line);
-  background: var(--surface); color: var(--gold-bright); font-size: 1.3rem; line-height: 1; cursor: pointer;
-  transition: border-color 0.2s, background 0.2s; }
+/* ---------- Panchang calendar v2 — compact, glanceable ---------- */
+.pan-page { max-width: 900px; }
+.pan-layout { display: grid; grid-template-columns: 1fr; gap: var(--sp-4); align-items: start; }
+@media (min-width: 860px) {
+  .pan-layout { grid-template-columns: 1fr 340px; }
+  .cal-card { position: sticky; top: 84px; }
+}
+
+.pan-detail { padding: var(--sp-4) var(--sp-5); }
+.pan-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.pan-detail-head h3 { font-size: var(--fs-lg); margin: 0; display: flex; align-items: center; gap: 8px; }
+.pan-today-tag { font-size: var(--fs-xs); font-weight: 700; background: var(--gold); color: #231206; padding: 2px 9px; border-radius: var(--r-full); }
+
+/* Glance row — the 4 facts people actually open this page for, immediately visible. */
+.pan-glance { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
+@media (min-width: 480px) and (max-width: 859px) { .pan-glance { grid-template-columns: repeat(4, 1fr); } }
+.pg-item { background: linear-gradient(135deg, rgba(224,166,58,0.14), rgba(224,166,58,0.03)); border: 1px solid var(--gold-deep);
+  border-radius: var(--r-sm); padding: 8px 10px; display: grid; gap: 2px; }
+.pg-l { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+.pg-v { font-size: 0.92rem; font-weight: 700; color: var(--gold-bright); font-family: var(--font-display-stack); line-height: 1.2; }
+
+.pan-grid-sm { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: var(--sp-4); }
+.pan-grid-sm .stat-v2 { padding: 8px 10px; gap: 2px; }
+.pan-v { font-size: 0.86rem !important; }
+.pan-cta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Calendar — small, dense cells so the whole month fits without dominating the page. */
+.cal-card { padding: var(--sp-4); }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: var(--sp-3); }
+.cal-title { font-family: var(--font-display-stack); font-size: 0.98rem; color: var(--ink); }
+.cal-nav { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface); color: var(--gold-bright); font-size: 1.1rem; line-height: 1; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s; flex-shrink: 0; }
 .cal-nav:hover { border-color: var(--gold); background: rgba(224,166,58,0.1); }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-weekdays { margin-bottom: 6px; }
-.cal-wd { text-align: center; font-size: var(--fs-xs); font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 0; }
-.cal-cell { aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px;
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-weekdays { margin-bottom: 4px; }
+.cal-wd { text-align: center; font-size: 0.64rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; padding: 2px 0; }
+.cal-cell { aspect-ratio: 1; min-height: 30px; display: grid; place-items: center; border-radius: 8px;
   border: 1px solid transparent; background: transparent; color: var(--ink-soft);
-  font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer;
-  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s var(--ease-spring); }
+  font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s var(--ease-spring); }
 .cal-cell:hover { background: var(--surface-2); color: var(--ink); }
 .cal-cell.is-today { border-color: var(--gold-deep); color: var(--gold-bright); }
 .cal-cell.is-selected { background: linear-gradient(140deg, var(--gold-bright), var(--gold-deep));
-  color: #231206; border-color: transparent; transform: scale(1.04); box-shadow: var(--shadow-glow); }
+  color: #231206; border-color: transparent; box-shadow: var(--shadow-glow); }
 .cal-blank { cursor: default; }
+.cal-today-btn { width: 100%; margin-top: var(--sp-3); padding: 8px; border-radius: var(--r-sm);
+  border: 1px dashed var(--line); background: transparent; color: var(--gold-bright);
+  font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.cal-today-btn:hover { border-color: var(--gold-deep); background: rgba(224,166,58,0.08); }
 
-.pan-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: var(--sp-4); }
-.pan-detail-head h3 { font-size: var(--fs-lg); margin: 0; }
-.pan-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
-@media (min-width: 640px) { .pan-grid { grid-template-columns: repeat(4, 1fr); } }
-.pan-grid .stat-v2 { gap: 4px; }
-.pan-v { font-size: var(--fs-base) !important; font-family: var(--font-display-stack); }
-.pan-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: var(--sp-5); }
+/* ---------- AI Astrologer chat v2 ---------- */
+.chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: var(--sp-4); }
+.chat-avatar { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+  font-size: 1.3rem; background: linear-gradient(140deg, var(--gold-bright), var(--gold-deep)); box-shadow: var(--shadow-glow); }
+.chat-status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--ink-soft); }
+.chat-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
 
-/* Decorative orbiting planets sit directly behind the hero headline on small
-   screens, muddying it. They're atmosphere, not information — drop them on
-   phones (the ambient sunburst and starfield still carry the mood) and just
-   soften them on tablets. */
-@media (max-width: 700px) {
-  .landing .hero-orbits { display: none; }
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px; }
+.chat-suggestion-chip {
+  font-size: 0.82rem; font-weight: 600; color: var(--gold-bright);
+  background: rgba(224,166,58,0.08); border: 1px solid var(--gold-deep); border-radius: var(--r-full);
+  padding: 8px 14px; cursor: pointer; text-align: left; transition: background 0.2s, transform 0.15s var(--ease-spring);
 }
-@media (min-width: 701px) and (max-width: 1024px) {
-  .landing .hero-orbits { opacity: 0.5; }
-}
+.chat-suggestion-chip:hover { background: rgba(224,166,58,0.16); transform: translateY(-1px); }
+
+.msg-typing { display: flex; gap: 4px; align-items: center; padding: 14px 16px; }
+.msg-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: typingBounce 1.2s infinite ease-in-out; }
+.msg-typing span:nth-child(2) { animation-delay: 0.15s; }
+.msg-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .msg-typing span { animation: none; } }

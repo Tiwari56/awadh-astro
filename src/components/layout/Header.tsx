@@ -42,7 +42,7 @@ export default function Header() {
       dropdown: [
         { label: t.nav.chatWithAstrologer, href: "/astrologers" },
         { label: t.nav.callAstrologer, href: "/astrologers" },
-        { label: t.nav.aiChat, href: "/chat" },
+        { label: "AI Astrologer", href: "/chat" },
       ],
     },
     {
@@ -51,8 +51,6 @@ export default function Header() {
       dropdown: [
         { label: t.nav.freeKundali, href: "/kundali" },
         { label: t.nav.kundaliMatching, href: "/match" },
-        { label: "Panchang Calendar", href: "/panchang" },
-        { label: t.nav.aiChat, href: "/chat" },
       ],
     },
     {
