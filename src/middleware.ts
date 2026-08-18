@@ -12,6 +12,8 @@ const { auth } = NextAuth(authConfig);
  *   /account*        needs a session; if not onboarded yet, send to /onboarding.
  *   /onboarding      needs a session (can't onboard while logged out).
  *   /seva/bookings   needs a session (bookings are tied to an account now).
+ *   /chat            needs a session — the founder's call: AI Astrologer chat
+ *                    is login-only, unlike Kundali/Match which stay free.
  *   /login           if already signed in, always leave — to /onboarding if not
  *                    onboarded yet, otherwise to callbackUrl (or home).
  *
@@ -40,6 +42,10 @@ export default auth((req) => {
     if (!session?.user) return NextResponse.redirect(new URL("/login?callbackUrl=/seva/bookings", req.url));
   }
 
+  if (pathname.startsWith("/chat")) {
+    if (!session?.user) return NextResponse.redirect(new URL("/login?callbackUrl=/chat", req.url));
+  }
+
   if (pathname.startsWith("/login")) {
     if (session?.user) {
       const callbackUrl = req.nextUrl.searchParams.get("callbackUrl") || "/";
@@ -54,5 +60,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/account/:path*", "/onboarding/:path*", "/seva/bookings/:path*", "/login"],
+  matcher: ["/account/:path*", "/onboarding/:path*", "/seva/bookings/:path*", "/chat/:path*", "/login"],
 };

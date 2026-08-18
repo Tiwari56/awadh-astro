@@ -20,18 +20,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Message is required" }, { status: 400 });
   }
 
+  // AI Astrologer is login-gated (the founder's call — unlike Kundali/Match,
+  // which stay free). Middleware protects the page, but the API needs its
+  // own check too — it's reachable directly, not just through the UI.
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
   // Ground the reply in the signed-in user's own chart when we have one.
   let kundali: KundaliResult | undefined;
-  const session = await auth();
-  if (session?.user?.id) {
-    const [row] = await db
-      .select({ resultJson: kundaliRecords.resultJson })
-      .from(kundaliRecords)
-      .where(eq(kundaliRecords.userId, session.user.id))
-      .orderBy(desc(kundaliRecords.createdAt))
-      .limit(1);
-    if (row?.resultJson) kundali = row.resultJson as KundaliResult;
-  }
+  const [row] = await db
+    .select({ resultJson: kundaliRecords.resultJson })
+    .from(kundaliRecords)
+    .where(eq(kundaliRecords.userId, session.user.id))
+    .orderBy(desc(kundaliRecords.createdAt))
+    .limit(1);
+  if (row?.resultJson) kundali = row.resultJson as KundaliResult;
 
   const reply = await generateChatReply({
     message,

@@ -35,7 +35,7 @@ const SUGGESTIONS_HI = [
  * provider, which logs instead of sending — the confirmation UI is real,
  * the delivery isn't yet.
  */
-function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
+function UpsellCard({ upsell, hi }: { upsell: ChatUpsellPayload; hi: boolean }) {
   const [time, setTime] = useState(HOROSCOPE_TIMES[1]);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -66,24 +66,24 @@ function UpsellCard({ upsell }: { upsell: ChatUpsellPayload }) {
           {upsell.ctaLabel}
         </Link>
         <form className="upsell-schedule" onSubmit={subscribe}>
-          <span>📧 Get your daily horoscope by email at</span>
+          <span>📧 {hi ? "अपना दैनिक राशिफल ईमेल पर पाएं, समय:" : "Get your daily horoscope by email at"}</span>
           <div className="upsell-schedule-row">
             <select value={time} onChange={(e) => setTime(e.target.value)}>
               {HOROSCOPE_TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           {status === "sent" ? (
-            <span className="city-note ok">✓ You&apos;re signed up — check your inbox to confirm.</span>
+            <span className="city-note ok">✓ {hi ? "आप पंजीकृत हो गए हैं — पुष्टि के लिए अपना इनबॉक्स जांचें।" : "You're signed up — check your inbox to confirm."}</span>
           ) : (
             <>
               <div className="upsell-schedule-row">
                 <input type="email" required placeholder="you@example.com" value={email}
                   onChange={(e) => setEmail(e.target.value)} style={{ flex: 1 }} />
                 <button type="submit" className="btn btn-outline btn-sm" disabled={status === "sending"}>
-                  {status === "sending" ? "…" : "Sign up"}
+                  {status === "sending" ? "…" : hi ? "पंजीकरण करें" : "Sign up"}
                 </button>
               </div>
-              {status === "error" && <span className="city-note warn">Could not sign up right now — please try again.</span>}
+              {status === "error" && <span className="city-note warn">{hi ? "अभी पंजीकरण नहीं हो सका — कृपया पुनः प्रयास करें।" : "Could not sign up right now — please try again."}</span>}
             </>
           )}
         </form>
@@ -125,7 +125,7 @@ export default function ChatPage() {
       const aiMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "ai",
-        text: data.text ?? data.error ?? "Sorry, I could not respond. Please try again.",
+        text: data.text ?? data.error ?? (locale === "hi" ? "क्षमा करें, मैं उत्तर नहीं दे सका। कृपया पुनः प्रयास करें।" : "Sorry, I could not respond. Please try again."),
         timestamp: Date.now(),
         kind: data.kind ?? "text",
         upsell: data.upsell,
@@ -134,7 +134,7 @@ export default function ChatPage() {
     } catch {
       setMessages((m) => [
         ...m,
-        { id: crypto.randomUUID(), role: "ai", text: "Network error — please try again.", timestamp: Date.now() },
+        { id: crypto.randomUUID(), role: "ai", text: locale === "hi" ? "नेटवर्क त्रुटि — कृपया पुनः प्रयास करें।" : "Network error — please try again.", timestamp: Date.now() },
       ]);
     } finally {
       setSending(false);
@@ -164,7 +164,7 @@ export default function ChatPage() {
             m.kind === "upsell" && m.upsell ? (
               <div key={m.id}>
                 <div className="msg msg-ai">{m.text}</div>
-                <UpsellCard upsell={m.upsell} />
+                <UpsellCard upsell={m.upsell} hi={locale === "hi"} />
               </div>
             ) : (
               <div key={m.id} className={`msg ${m.role === "user" ? "msg-user" : "msg-ai"}`}>
