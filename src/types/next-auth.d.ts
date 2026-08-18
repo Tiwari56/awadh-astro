@@ -6,6 +6,7 @@ declare module "next-auth" {
       id: string;
       phone: string | null;
       role: "user" | "astrologer" | "admin";
+      plan: "free" | "plus";
       onboarded: boolean;
     } & DefaultSession["user"];
   }
@@ -16,6 +17,7 @@ declare module "next-auth/jwt" {
     uid?: string;
     phone?: string | null;
     role?: "user" | "astrologer" | "admin";
+    plan?: "free" | "plus";
     onboarded?: boolean;
   }
 }

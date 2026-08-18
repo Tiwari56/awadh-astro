@@ -1,4 +1,5 @@
 import type { PlanetPosition } from "@/types";
+import { vedic, signIndex } from "@/lib/i18n/vedic-terms";
 
 /**
  * Classic North Indian Vedic birth chart (square + both diagonals + the
@@ -9,14 +10,6 @@ import type { PlanetPosition } from "@/types";
  * geometry note at the bottom of this file if this ever needs editing.
  */
 
-const PLANET_ABBR: Record<string, string> = {
-  sun: "Su", moon: "Mo", mars: "Ma", mercury: "Me", jupiter: "Ju",
-  venus: "Ve", saturn: "Sa", rahu: "Ra", ketu: "Ke",
-};
-
-function abbr(planet: string): string {
-  return PLANET_ABBR[planet.toLowerCase()] ?? planet.slice(0, 2);
-}
 
 // Key construction points (300x300 coordinate space).
 const O: [number, number] = [150, 150]; // center
@@ -48,15 +41,30 @@ const OUTLINE = [A, B, C, D].map((p) => p.join(",")).join(" ");
 export default function NorthIndianChart({
   ascendant,
   planets,
+  hi = false,
 }: {
   ascendant: string;
   planets: PlanetPosition[];
+  /** Render Hindi glyphs/labels (Devanagari) instead of English. */
+  hi?: boolean;
 }) {
+  // The Ascendant travels in the `planets` array so the positions table can
+  // show it as Lagna, but the chart marks house 1 as Asc separately — don't
+  // draw it twice.
   const byHouse = new Map<number, PlanetPosition[]>();
   for (const p of planets) {
+    if (p.planet.toLowerCase() === "ascendant") continue;
     if (!byHouse.has(p.house)) byHouse.set(p.house, []);
     byHouse.get(p.house)!.push(p);
   }
+
+  // In a North Indian chart the boxes are FIXED houses and the signs rotate
+  // through them, so each house is labelled with the number of the rasi
+  // sitting in it — house 1 carries the ascendant's sign. Showing the house
+  // number instead would be redundant (the position already encodes it).
+  const ascIdx = signIndex(ascendant);
+  const rasiNumberForHouse = (houseNum: number) =>
+    ascIdx === null ? null : ((ascIdx + houseNum - 1) % 12) + 1;
 
   return (
     <svg viewBox="0 0 300 300" className="kundli-chart" role="img" aria-label={`North Indian birth chart, Ascendant ${ascendant}`}>
@@ -72,11 +80,11 @@ export default function NorthIndianChart({
           <g key={houseNum}>
             {houseNum === 1 && (
               <text x={h.label[0]} y={h.label[1] - 16} textAnchor="middle" className="chart-asc-label">
-                Asc
+                {hi ? "लग्न" : "Asc"}
               </text>
             )}
             <text x={h.label[0]} y={h.label[1]} textAnchor="middle" className="chart-house-num">
-              {houseNum}
+              {rasiNumberForHouse(houseNum) ?? houseNum}
             </text>
             {occupants.map((p, j) => (
               <text
@@ -86,7 +94,7 @@ export default function NorthIndianChart({
                 textAnchor="middle"
                 className={`chart-planet${p.retrograde ? " chart-planet-retro" : ""}`}
               >
-                {abbr(p.planet)}{p.retrograde ? "℞" : ""}
+                {vedic.planetAbbr(p.planet, hi)}{p.retrograde ? "℞" : ""}
               </text>
             ))}
           </g>

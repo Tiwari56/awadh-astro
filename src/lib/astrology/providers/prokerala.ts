@@ -42,13 +42,20 @@ interface NakshatraInfo { id?: number; name?: string; lord?: { name?: string }; 
 interface PlanetEntry {
   name?: string;
   is_retrograde?: boolean;
-  position?: number; // house number 1..12
+  /**
+   * NOT the house number — live responses show this is always `rasi.id + 1`,
+   * i.e. the 1-based sign number. Houses are computed from the ascendant via
+   * houseFromAscendant(). Kept here only to document the trap.
+   */
+  position?: number;
+  /** Sidereal longitude 0–360°, across the whole zodiac. Nakshatra derives from this. */
+  longitude?: number;
+  /** Degrees within the current sign (0–30). */
   degree?: number;
   rasi?: Rasi;
   // nakshatra/avastha are NOT present on real /planet-position responses
-  // (confirmed live) — kept optional so planets[].nakshatra/dignity fall
-  // back to "—" honestly rather than guessing, in case a future Prokerala
-  // plan/endpoint adds them.
+  // (confirmed live) — nakshatra is derived from `longitude` instead;
+  // dignity has no source yet and honestly shows "—".
   nakshatra?: NakshatraInfo;
   avastha?: string;
 }
@@ -114,16 +121,84 @@ interface KaalSarpData { has_dosha?: boolean; type?: string; dosha_type?: string
 
 // --- Formatting helpers ---------------------------------------------------------
 
-const SIGN_BY_ID: Record<number, string> = {
-  1: "Mesha (Aries)", 2: "Vrishabha (Taurus)", 3: "Mithuna (Gemini)",
-  4: "Karka (Cancer)", 5: "Simha (Leo)", 6: "Kanya (Virgo)",
-  7: "Tula (Libra)", 8: "Vrishchika (Scorpio)", 9: "Dhanu (Sagittarius)",
-  10: "Makara (Capricorn)", 11: "Kumbha (Aquarius)", 12: "Meena (Pisces)",
-};
+/**
+ * Sidereal signs in zodiac order. Prokerala's `rasi.id` is ZERO-BASED
+ * (id 0 = Mesha … id 11 = Meena) — verified against live responses where
+ * e.g. {id: 11, name: "Meena"} and {id: 0, name: "Mesha"}. An earlier
+ * one-based mapping here shifted EVERY sign by one, so ascendant, moon sign,
+ * sun sign and every planet's rasi were silently wrong on every chart.
+ */
+const SIGNS = [
+  "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)",
+  "Karka (Cancer)", "Simha (Leo)", "Kanya (Virgo)",
+  "Tula (Libra)", "Vrishchika (Scorpio)", "Dhanu (Sagittarius)",
+  "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)",
+];
+
+/** Sanskrit rasi name (as Prokerala returns it) -> our canonical "Sanskrit (English)" label. */
+const SIGN_BY_NAME: Record<string, string> = Object.fromEntries(
+  SIGNS.map((label) => [label.split(" (")[0].toLowerCase(), label])
+);
+
+/** Zero-based sidereal sign index (0 = Mesha), or null if unknown. */
+function rasiIndex(rasi?: Rasi): number | null {
+  if (typeof rasi?.id === "number" && rasi.id >= 0 && rasi.id < 12) return rasi.id;
+  if (rasi?.name) {
+    const i = SIGNS.findIndex((s) => s.split(" (")[0].toLowerCase() === rasi.name!.toLowerCase());
+    if (i >= 0) return i;
+  }
+  return null;
+}
 
 function formatRasi(rasi?: Rasi): string {
-  if (rasi?.id && SIGN_BY_ID[rasi.id]) return SIGN_BY_ID[rasi.id];
-  return rasi?.name ?? "—";
+  // Prefer the API's own name (unambiguous) and normalise it to our label
+  // format; fall back to the zero-based id.
+  if (rasi?.name && SIGN_BY_NAME[rasi.name.toLowerCase()]) return SIGN_BY_NAME[rasi.name.toLowerCase()];
+  const i = rasiIndex(rasi);
+  return i === null ? "—" : SIGNS[i];
+}
+
+/**
+ * The 27 nakshatras in order. Each spans 360/27 = 13°20' of the sidereal
+ * zodiac, and each divides into 4 padas of 3°20'.
+ */
+const NAKSHATRAS = [
+  "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+  "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+  "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+  "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta",
+  "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati",
+];
+const NAKSHATRA_SPAN = 360 / 27;
+
+/**
+ * Nakshatra + pada from sidereal longitude. Prokerala's /planet-position
+ * doesn't return per-planet nakshatra, but it DOES return each planet's
+ * sidereal longitude — and nakshatra is a pure deterministic function of
+ * that, so we derive it rather than showing "—". Verified against the
+ * API's own independently-computed Moon nakshatra + pada on multiple charts.
+ */
+function nakshatraFromLongitude(longitude?: number): { name: string; pada: number } {
+  if (typeof longitude !== "number" || Number.isNaN(longitude)) return { name: "—", pada: 0 };
+  const lon = ((longitude % 360) + 360) % 360;
+  const index = Math.floor(lon / NAKSHATRA_SPAN);
+  const pada = Math.floor((lon % NAKSHATRA_SPAN) / (NAKSHATRA_SPAN / 4)) + 1;
+  return { name: NAKSHATRAS[index] ?? "—", pada };
+}
+
+/**
+ * House number (1–12) counted from the ascendant's sign — the standard
+ * whole-sign house system used in North Indian charts.
+ *
+ * Prokerala's `position` field is NOT the house: live responses show it is
+ * always `rasi.id + 1`, i.e. the 1-based SIGN number. Using it as the house
+ * (as this file previously did) put every planet in the wrong house unless
+ * the ascendant happened to be Mesha, which is also why the rendered birth
+ * chart looked wrong.
+ */
+function houseFromAscendant(planetSign: number | null, ascSign: number | null): number {
+  if (planetSign === null || ascSign === null) return 0;
+  return ((planetSign - ascSign + 12) % 12) + 1;
 }
 
 /**
@@ -174,22 +249,34 @@ export const prokeralaProvider: AstrologyProvider = {
     ]);
 
     const planetEntries = planetPos?.planet_position ?? [];
-    // NOTE: assumes the ascendant is returned as a planet_position entry named
-    // "Ascendant" — the common pattern for this class of API, unconfirmed for
-    // Prokerala specifically (see file header). Falls back to "—" if absent.
+    // Prokerala returns the ascendant as a planet_position entry named
+    // "Ascendant" (confirmed live). It anchors the whole-sign house system,
+    // and is also shown in the positions table as Lagna — it's the single
+    // most important row in a Vedic chart, so it must not be filtered out.
     const ascendantEntry = planetEntries.find((e) => e.name?.toLowerCase() === "ascendant");
-    const planets: PlanetPosition[] = planetEntries
-      .filter((e) => e.name && e.name.toLowerCase() !== "ascendant")
-      .map((e) => ({
-        planet: e.name!,
+    const ascSign = rasiIndex(ascendantEntry?.rasi);
+
+    const toPosition = (e: PlanetEntry, label?: string): PlanetPosition => {
+      const nak = nakshatraFromLongitude(e.longitude);
+      return {
+        planet: label ?? e.name!,
         sign: formatRasi(e.rasi),
-        house: e.position ?? 0,
+        house: houseFromAscendant(rasiIndex(e.rasi), ascSign),
         degree: typeof e.degree === "number" ? Math.round(e.degree * 10) / 10 : 0,
         retrograde: Boolean(e.is_retrograde),
-        nakshatra: e.nakshatra?.name ?? "—",
-        pada: e.nakshatra?.pada ?? 0,
+        nakshatra: nak.name,
+        pada: nak.pada,
         dignity: e.avastha ?? "—",
-      }));
+      };
+    };
+
+    // Lagna first (house 1 by definition), then the grahas in classical order.
+    const planets: PlanetPosition[] = [
+      ...(ascendantEntry ? [toPosition(ascendantEntry, "Ascendant")] : []),
+      ...planetEntries
+        .filter((e) => e.name && e.name.toLowerCase() !== "ascendant")
+        .map((e) => toPosition(e)),
+    ];
 
     const { mahadasha, antardasha } = extractDasha(kundli.dasha_periods ?? []);
     const nakDetails = kundli.nakshatra_details;
@@ -221,7 +308,7 @@ export const prokeralaProvider: AstrologyProvider = {
       mahadasha,
       antardasha,
       mangalDosha: formatMangalDosha(kundli.mangal_dosha),
-      sadeSati: computeSadeSati(nakDetails?.chandra_rasi?.id, currentSaturn?.planet_position),
+      sadeSati: computeSadeSati(nakDetails?.chandra_rasi, currentSaturn?.planet_position),
       kaalSarpDosha: formatKaalSarp(kaalSarp),
       yogas: extractYogas(kundli.yoga_details),
       luckyGem: info?.birth_stone ?? "—",
@@ -258,13 +345,17 @@ function formatKaalSarp(k: KaalSarpData | null): DoshaSummary {
  * NATAL Moon's sign. Classically active when Saturn transits the 12th, 1st
  * (peak/"Madhya"), or 2nd sign counted from natal Moon.
  */
-function computeSadeSati(moonRasiId: number | undefined, saturnNow?: PlanetEntry[]): DoshaSummary {
+function computeSadeSati(moonRasi: Rasi | undefined, saturnNow?: PlanetEntry[]): DoshaSummary {
   const saturn = saturnNow?.find((e) => e.name?.toLowerCase() === "saturn");
-  const saturnRasiId = saturn?.rasi?.id;
-  if (!moonRasiId || !saturnRasiId) {
+  // Sign indices are ZERO-based, so a plain truthiness check would treat
+  // Mesha (0) as "missing" and silently skip Sade Sati for everyone born
+  // with Moon or Saturn in Aries. Compare against null explicitly.
+  const moonIdx = rasiIndex(moonRasi);
+  const saturnIdx = rasiIndex(saturn?.rasi);
+  if (moonIdx === null || saturnIdx === null) {
     return { present: false, severity: "None", summary: "Sade Sati status could not be computed (transit data unavailable)." };
   }
-  const houseFromMoon = ((saturnRasiId - moonRasiId + 12) % 12) + 1; // 1..12, Moon's own sign = 1
+  const houseFromMoon = ((saturnIdx - moonIdx + 12) % 12) + 1; // 1..12, Moon's own sign = 1
   const active = houseFromMoon === 12 || houseFromMoon === 1 || houseFromMoon === 2;
   if (!active) {
     return { present: false, severity: "None", summary: "You are not currently in Sade Sati. Saturn is not transiting near your Moon sign." };

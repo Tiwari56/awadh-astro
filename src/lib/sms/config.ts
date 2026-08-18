@@ -10,10 +10,11 @@
  * without a real SMS bill.
  */
 
-export type SmsProviderName = "dummy" | "msg91";
+export type SmsProviderName = "dummy" | "msg91" | "brevo";
 
 export const smsConfig = {
   provider: (process.env.SMS_PROVIDER as SmsProviderName) || "dummy",
+  senderId: process.env.SMS_SENDER_ID || "AwadhAstro",
   msg91: {
     authKey: process.env.MSG91_AUTH_KEY,
     templateId: process.env.MSG91_TEMPLATE_ID,
@@ -22,4 +23,14 @@ export const smsConfig = {
 
 export function isMsg91Configured(): boolean {
   return smsConfig.provider === "msg91" && Boolean(smsConfig.msg91.authKey);
+}
+
+/** True when a real (non-dummy) SMS provider is configured and usable. */
+export function isSmsConfigured(): boolean {
+  return isMsg91Configured() || isBrevoSmsConfigured();
+}
+
+/** Brevo transactional SMS — same account as the email provider. */
+export function isBrevoSmsConfigured(): boolean {
+  return smsConfig.provider === "brevo" && Boolean(process.env.BREVO_API_KEY);
 }

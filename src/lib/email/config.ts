@@ -1,27 +1,33 @@
 /**
- * Email provider configuration (env-driven) — mirrors astrology/config.ts
- * and ai/config.ts's pattern.
+ * Email provider configuration (env-driven).
  *
- * Founder's brief: WhatsApp delivery for Plus daily-horoscope needs a
- * WhatsApp Business API account (Gupshup/Twilio/Meta direct) which is a
- * business-side decision, not something to fake — "for now just send to
- * email if possible." Email still needs a provider + API key (Resend/
- * SendGrid/Postmark/SES all require one; there's no keyless transactional
- * email service), so this is scaffolded the same way as the RAG chat
- * provider: a working dummy today, a documented real implementation to
- * wire in once a provider is chosen.
+ * Brevo is the default real provider: its free tier covers 300 transactional
+ * emails/day with no card, which is enough to run email-OTP login for an
+ * early-stage product at zero cost. Resend stays supported for later.
+ *
+ * To go live:
+ *   EMAIL_PROVIDER=brevo
+ *   BREVO_API_KEY=<key from Brevo dashboard>
+ *   EMAIL_FROM_ADDRESS=<a verified sender on your domain>
  */
 
-export type EmailProviderName = "dummy" | "resend";
+export type EmailProviderName = "dummy" | "brevo" | "resend";
 
 export const emailConfig = {
   provider: (process.env.EMAIL_PROVIDER as EmailProviderName) || "dummy",
-  resend: {
-    apiKey: process.env.RESEND_API_KEY,
-    fromAddress: process.env.EMAIL_FROM_ADDRESS || "horoscope@awadhastro.com",
-  },
+  fromAddress: process.env.EMAIL_FROM_ADDRESS || "no-reply@awadhastro.com",
+  fromName: process.env.EMAIL_FROM_NAME || "Awadh Astro",
+  brevo: { apiKey: process.env.BREVO_API_KEY },
+  resend: { apiKey: process.env.RESEND_API_KEY },
 } as const;
 
+export function isBrevoConfigured(): boolean {
+  return emailConfig.provider === "brevo" && Boolean(emailConfig.brevo.apiKey);
+}
 export function isResendConfigured(): boolean {
   return emailConfig.provider === "resend" && Boolean(emailConfig.resend.apiKey);
+}
+/** True when any real (non-dummy) email provider is usable. */
+export function isEmailConfigured(): boolean {
+  return isBrevoConfigured() || isResendConfigured();
 }

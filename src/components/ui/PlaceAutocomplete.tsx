@@ -9,6 +9,8 @@ interface Props {
   onChange: (label: string) => void;
   placeholder?: string;
   required?: boolean;
+  /** Extra classes for the inner input. Defaults to the v2 input styling. */
+  className?: string;
 }
 
 /**
@@ -18,7 +20,7 @@ interface Props {
  * chosen label as text, but onChange only fires with a real suggestion pick
  * — outside clicks revert to the last confirmed value if nothing was chosen.
  */
-export default function PlaceAutocomplete({ id, value, onChange, placeholder, required }: Props) {
+export default function PlaceAutocomplete({ id, value, onChange, placeholder, required, className = "input-v2" }: Props) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function PlaceAutocomplete({ id, value, onChange, placeholder, re
     <div className="place-autocomplete" ref={wrapRef}>
       <input
         id={id}
+        className={className}
         required={required}
         autoComplete="off"
         value={query}

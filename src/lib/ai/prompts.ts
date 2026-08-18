@@ -1,12 +1,7 @@
 /**
- * Prompt templates for the future RAG-backed chat provider. NOT used by
- * providers/dummy.ts today — this file exists so the shape of the eventual
- * system prompt is decided and reviewable now, rather than invented under
- * time pressure later.
- *
- * TODO(RAG): when wiring providers/rag.ts, build the system prompt as:
- *   SYSTEM_PERSONA + "\n\n" + chartBlock(ctx.kundali) + "\n\n" +
- *   retrievedContextBlock(retrieval results) + "\n\n" + GUARDRAILS
+ * Prompt templates for the model-backed chat provider (providers/llm.ts).
+ * The system prompt is assembled as:
+ *   SYSTEM_PERSONA + chartBlock(kundali) + [retrieved context] + GUARDRAILS
  */
 
 /** Base persona — who the assistant is and how it should sound. */
@@ -32,13 +27,40 @@ export const GUARDRAILS = `Rules you must always follow:
 
 /** Renders the user's REAL computed chart into the prompt — never let the model guess these values. */
 export function chartBlock(kundali?: import("@/types").KundaliResult): string {
-  if (!kundali) return "No birth chart is available for this user yet — do not assume one.";
+  if (!kundali) {
+    return [
+      "No birth chart is available for this user yet — do not assume or invent one.",
+      "If the question needs chart data, invite them to generate their free kundali first.",
+    ].join("\n");
+  }
+  const planets = kundali.planets
+    ?.map((p) => `${p.planet} in ${p.sign} (house ${p.house}, ${p.nakshatra}${p.retrograde ? ", retrograde" : ""})`)
+    .join("; ");
+  const doshas = [
+    `Mangal Dosha: ${kundali.mangalDosha.present ? `present (${kundali.mangalDosha.severity})` : "absent"}`,
+    `Sade Sati: ${kundali.sadeSati.present ? `active (${kundali.sadeSati.severity})` : "not active"}`,
+    `Kaal Sarp: ${kundali.kaalSarpDosha.present ? "present" : "absent"}`,
+  ].join(" · ");
   return [
-    "The user's computed birth chart (from the astrology API, not invented):",
-    `Ascendant: ${kundali.ascendant} · Moon: ${kundali.moonSign} · Sun: ${kundali.sunSign} · Nakshatra: ${kundali.nakshatra}`,
+    "The user's computed birth chart (from the astrology API's ephemeris — authoritative, never contradict or recompute these):",
+    `Ascendant/Lagna: ${kundali.ascendant} · Moon sign: ${kundali.moonSign} · Sun sign: ${kundali.sunSign} · Birth nakshatra: ${kundali.nakshatra}`,
     `Current Mahadasha: ${kundali.currentDasha}`,
-    `Mangal Dosha: ${kundali.mangalDosha.present ? "present" : "absent"} · Sade Sati: ${kundali.sadeSati.present ? "active" : "not active"}`,
-  ].join("\n");
+    doshas,
+    planets ? `Planetary positions: ${planets}` : "",
+    kundali.yogas?.length ? `Active yogas: ${kundali.yogas.map((y) => y.name).join(", ")}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+/** Tells the model which language to answer in. */
+export function languageBlock(locale?: string): string {
+  const map: Record<string, string> = {
+    hi: "Hindi (Devanagari script)",
+    bn: "Bengali",
+    mr: "Marathi",
+    en: "English",
+  };
+  const lang = map[locale ?? "en"] ?? "English";
+  return `Reply in ${lang}. Keep Sanskrit/Jyotish terms (rashi, nakshatra, dasha, dosha) in their traditional form.`;
 }
 
 /**

@@ -164,12 +164,15 @@ export default function HomePage() {
               💬 {h.ctaChatAstrologer}
             </Link>
           </div>
+          {/* Trust signals, not invented metrics. A new platform quoting
+              "9.5 crore users" is a claim it cannot support; these are all
+              things that are actually true of the product today. */}
           <div className="hero-stats">
             {[
-              { v: "48,726+", l: h.statAstrologers },
-              { v: "9.5Cr+",  l: h.statUsers },
-              { v: "5Cr+",    l: h.statConsultations },
-              { v: "4.8 ★",   l: h.statRating },
+              { v: "In person", l: "Pandits verified at Ayodhya" },
+              { v: "₹0",        l: "Kundali & birth chart" },
+              { v: "Same day",  l: "Muhurat confirmed" },
+              { v: "4",         l: "Languages" },
             ].map((s) => (
               <div key={s.l} className="hero-stat-item">
                 <div className="hero-stat-num">{s.v}</div>

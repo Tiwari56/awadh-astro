@@ -1,6 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
-  boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, varchar,
+  boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, varchar,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -25,7 +25,13 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "requested", "muhurat_confirmed", "performed", "prasad_shipped", "delivered",
 ]);
 export const bookingModeEnum = pgEnum("booking_mode", ["online", "offline"]);
+/** How the puja is witnessed — distinct from how it's paid for. */
+export const attendanceEnum = pgEnum("attendance_mode", ["online", "in_person"]);
+/** Who the puja is performed for. */
+export const bookingForEnum = pgEnum("booking_for", ["self", "family"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "cash"]);
 export const walletTxnTypeEnum = pgEnum("wallet_txn_type", ["credit", "debit"]);
+export const otpChannelEnum = pgEnum("otp_channel", ["sms", "email"]);
 
 // --- Auth.js-required tables (DrizzleAdapter shape), extended with our columns ---
 
@@ -42,7 +48,13 @@ export const users = pgTable("users", {
   plan: planEnum("plan").notNull().default("free"),
   onboarded: boolean("onboarded").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  // Admin dashboard segments users by role/plan and charts signups over time;
+  // without these every such query is a full table scan.
+  roleIdx: index("users_role_idx").on(t.role),
+  planIdx: index("users_plan_idx").on(t.plan),
+  createdAtIdx: index("users_created_at_idx").on(t.createdAt),
+}));
 
 export const accounts = pgTable(
   "accounts",
@@ -61,6 +73,7 @@ export const accounts = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
+    userIdx: index("accounts_user_idx").on(table.userId),
   })
 );
 
@@ -82,14 +95,25 @@ export const verificationTokens = pgTable(
 
 // --- Phone OTP (separate from Auth.js's email-shaped verificationTokens) ---
 
+/**
+ * One-time login codes. `identifier` is the phone number OR the email
+ * address depending on `channel` — both login routes share one table so the
+ * expiry/consumption/rate-limit logic lives in exactly one place.
+ */
 export const otpCodes = pgTable("otp_codes", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
-  phone: varchar("phone", { length: 20 }).notNull(),
+  identifier: text("identifier").notNull(),
+  channel: otpChannelEnum("channel").notNull().default("sms"),
   code: varchar("code", { length: 6 }).notNull(),
   expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
   consumed: boolean("consumed").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  // Every single sign-in runs the identifier+consumed+expiry lookup in authorize().
+  identifierConsumedIdx: index("otp_codes_identifier_consumed_idx").on(t.identifier, t.consumed),
+  expiresAtIdx: index("otp_codes_expires_at_idx").on(t.expiresAt),
+  createdAtIdx: index("otp_codes_created_at_idx").on(t.createdAt), // rate limiting
+}));
 
 // --- Domain tables ---
 
@@ -113,7 +137,10 @@ export const addresses = pgTable("addresses", {
   pincode: varchar("pincode", { length: 12 }),
   isDefault: boolean("is_default").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  userIdx: index("addresses_user_idx").on(t.userId),
+  cityIdx: index("addresses_city_idx").on(t.city), // serviceability / delivery reporting
+}));
 
 export const wallets = pgTable("wallets", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
@@ -128,7 +155,10 @@ export const walletTransactions = pgTable("wallet_transactions", {
   type: walletTxnTypeEnum("type").notNull(),
   reason: text("reason").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  userCreatedIdx: index("wallet_txn_user_created_idx").on(t.userId, t.createdAt),
+  typeIdx: index("wallet_txn_type_idx").on(t.type), // revenue/credit reporting
+}));
 
 /**
  * Illustrative AstroTalk-style commission split — NOT an exact copy, just
@@ -148,7 +178,12 @@ export const astrologerProfiles = pgTable("astrologer_profiles", {
   commissionPercent: integer("commission_percent").notNull().default(30), // platform's cut
   totalConsults: integer("total_consults").notNull().default(0),
   rating: integer("rating_x10").notNull().default(0), // stored as rating*10 to avoid float column
-});
+}, (t) => ({
+  // Astrologer directory filters on availability and sorts by rating.
+  statusIdx: index("astrologer_status_idx").on(t.status),
+  ratingIdx: index("astrologer_rating_idx").on(t.rating),
+  verifiedIdx: index("astrologer_verified_idx").on(t.ayodhyaVerified),
+}));
 
 export const kundaliRecords = pgTable("kundali_records", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -160,7 +195,10 @@ export const kundaliRecords = pgTable("kundali_records", {
   placeOfBirth: text("place_of_birth").notNull(),
   resultJson: jsonb("result_json").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  // Account page and chat grounding both fetch "this user's latest kundali".
+  userCreatedIdx: index("kundali_user_created_idx").on(t.userId, t.createdAt),
+}));
 
 export const bookings = pgTable("bookings", {
   id: text("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -169,10 +207,28 @@ export const bookings = pgTable("bookings", {
   pujaName: text("puja_name").notNull(),
   devoteeName: text("devotee_name").notNull(),
   amountINR: integer("amount_inr").notNull(),
+  /** Legacy combined field, kept so old rows still read. New writes set the
+   *  three explicit columns below instead. */
   mode: bookingModeEnum("mode").notNull().default("online"),
+  /** Live stream vs somebody physically attending at the Ayodhya temple. */
+  attendance: attendanceEnum("attendance").notNull().default("online"),
+  bookingFor: bookingForEnum("booking_for").notNull().default("self"),
+  /** Name of the family member the puja is for, when bookingFor = "family". */
+  beneficiaryName: text("beneficiary_name"),
+  /** Live stream link — only meaningful when attendance = "online". */
+  wantsLiveStream: boolean("wants_live_stream").notNull().default(false),
+  /** HD recording delivered afterwards; always goes to the account holder. */
+  wantsRecording: boolean("wants_recording").notNull().default(false),
+  paymentMethod: paymentMethodEnum("payment_method").notNull().default("wallet"),
   status: bookingStatusEnum("status").notNull().default("muhurat_confirmed"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-});
+}, (t) => ({
+  userCreatedIdx: index("bookings_user_created_idx").on(t.userId, t.createdAt),
+  // Admin dashboard: fulfilment queue by stage, revenue by puja, volume over time.
+  statusIdx: index("bookings_status_idx").on(t.status),
+  pujaIdx: index("bookings_puja_idx").on(t.pujaId),
+  createdAtIdx: index("bookings_created_at_idx").on(t.createdAt),
+}));
 
 // --- Relations (for query ergonomics) ---
 

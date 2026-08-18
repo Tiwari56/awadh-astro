@@ -49,7 +49,7 @@ export default function PlusPage() {
               disabled={plan.pricePerYear === 0}
               onClick={onSubscribe}
             >
-              {plan.pricePerYear === 0 ? p.currentPlan : `${p.subscribe} — ₹999/yr`}
+              {plan.pricePerYear === 0 ? p.currentPlan : `${p.subscribe} — ₹${plan.pricePerYear}/yr`}
             </button>
           </div>
         ))}
